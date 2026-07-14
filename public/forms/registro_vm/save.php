@@ -40,9 +40,9 @@ if (!$pid || !$encounter) {
     die(xlt("Error: Missing required data (PID or Encounter)"));
 }
 
-$user       = is_string($v = $session->get('authUser')) ? $v : 'admin';
-$groupname  = is_string($v = $session->get('authProvider')) ? $v : 'Default';
-$authorized = is_numeric($v = $session->get('userauthorized')) ? (int) $v : 1;
+$user       = is_string($v = $session->get('authUser')) ? $v : die(xlt('Access denied'));
+$groupname  = is_string($v = $session->get('authProvider')) ? $v : die(xlt('Access denied'));
+$authorized = is_numeric($v = $session->get('userauthorized')) ? (int) $v : 0;
 // Ventilation mode whitelist
 $allowed_modos = ['ESPONTANEA', 'VENTILACION MECANICA', ''];
 $modo_ventilacion_raw        = (string) filter_input(INPUT_POST, 'modo_ventilacion');

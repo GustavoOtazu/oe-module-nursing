@@ -40,9 +40,9 @@ if (!$pid || !$encounter) {
     die(xlt("Error: Missing required data (PID or Encounter)"));
 }
 
-$user       = is_string($v = $session->get('authUser')) ? $v : 'admin';
-$groupname  = is_string($v = $session->get('authProvider')) ? $v : 'Default';
-$authorized = is_numeric($v = $session->get('userauthorized')) ? (int) $v : 1;
+$user       = is_string($v = $session->get('authUser')) ? $v : die(xlt('Access denied'));
+$groupname  = is_string($v = $session->get('authProvider')) ? $v : die(xlt('Access denied'));
+$authorized = is_numeric($v = $session->get('userauthorized')) ? (int) $v : 0;
 // Allowed patient position values
 $allowed_positions = ['DLI', 'DLD', 'DS', 'DV', 'CABECERA 30°', ''];
 $posicion_raw             = (string) filter_input(INPUT_POST, 'posicion_paciente');

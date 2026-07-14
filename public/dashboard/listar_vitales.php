@@ -12,7 +12,12 @@
 
 require_once(dirname(__DIR__, 5) . "/globals.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
 
 /*Extraer todos los internados actuales, tabla: form_encounter, con tipo Internación pc_catid = 16 (referencia tabla: openemr_postcalendar_categories   )*/
 $_salas_raw = filter_input(INPUT_GET, 'salas');

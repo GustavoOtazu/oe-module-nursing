@@ -15,6 +15,7 @@ require_once(dirname(__DIR__, 6) . "/globals.php");
 /** @var string $srcdir */
 require_once("$srcdir/api.inc.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
@@ -29,6 +30,10 @@ $id        = is_numeric($v = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBE
 
 if (!$pid || !$encounter) {
     die(xlt("Error: Missing required parameters (PID or Encounter)"));
+}
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
 }
 
 $is_edit = ($id > 0);
@@ -72,6 +77,8 @@ if ($is_edit) {
         $hora_evaluacion    = (string)($row['hora_evaluacion']    ?? '');
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
+    die(xlt('Access denied'));
+}
     }
 }
 

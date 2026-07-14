@@ -33,6 +33,10 @@ if (!$pid || !$encounter) {
     die(xlt("Error: Missing required parameters (PID or Encounter)"));
 }
 
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
+
 $is_edit = ($id > 0);
 
 // Initialize field variables
@@ -70,6 +74,8 @@ if ($is_edit) {
         $hora_operacion         = $row['hora_operacion']                ?? '';
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
+    die(xlt('Access denied'));
+}
     }
 }
 

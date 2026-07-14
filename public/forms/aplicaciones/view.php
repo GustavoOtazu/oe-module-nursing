@@ -13,6 +13,7 @@
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
@@ -27,6 +28,10 @@ $id        = is_numeric($v = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBE
 if (!$pid || !$encounter) {
     echo "<div style='padding:20px;color:red;'>" . xlt("Could not retrieve PID or Encounter.") . "</div>";
     exit;
+}
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
 }
 
 // Get patient info

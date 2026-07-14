@@ -16,12 +16,17 @@ require_once(dirname(__DIR__, 5) . "/globals.php");
 require_once "$srcdir/user.inc.php";
 require_once "$srcdir/options.inc.php";
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\OeUI\OemrUI;
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 

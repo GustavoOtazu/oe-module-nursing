@@ -12,7 +12,12 @@
 
 require_once(dirname(__DIR__, 5) . "/globals.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
 
 /** @phpstan-ignore include.fileNotFound */
 include("../fusioncharts.php");
@@ -138,7 +143,7 @@ include("../fusioncharts.php");
                                     array_push($paciente, [$row["date"], 'nibps_sys', $row["nibps_sys"]??0]);
                                     array_push($paciente, [$row["date"], 'nibps_dys', $row["nibps_dys"]]);
                                 }
-                                    echo '<div id="chart-container-'. text((string)($encounter['pid'] ?? '')) .'"class="col-md-6"></div>';
+                                    echo '<div id="chart-container-'. text((string)($encounter['pid'] ?? '')) .'" class="col-md-6"></div>';
                                     $data = json_encode($paciente);
                                     //print_r(json_encode($paciente));
                                     $schema = '[{"name": "Time","type": "date","format": "%d-%b-%y %H:%M:%S"}, {"name": "Type","type": "string"}, {"name": "valor_vital","type": "number"}]';
@@ -151,9 +156,9 @@ include("../fusioncharts.php");
                                     /** @phpstan-ignore class.notFound */
                                     $timeSeries->AddAttribute('chart', '{}');
                                     /** @phpstan-ignore class.notFound */
-                                    $timeSeries->AddAttribute('caption', '{"text":"' . (string)($encounter['paciente'] ?? '') . '"}');
+                                    $timeSeries->AddAttribute('caption', json_encode(['text' => (string)($encounter['paciente'] ?? '')]));
                                     /** @phpstan-ignore class.notFound */
-                                    $timeSeries->AddAttribute('subcaption', '{"text":" Sala: ' . (string)($encounter['sala'] ?? '') . ' - Cama: ' . (string)($encounter['cama'] ?? '') . '"}');
+                                    $timeSeries->AddAttribute('subcaption', json_encode(['text' => ' Sala: ' . (string)($encounter['sala'] ?? '') . ' - Cama: ' . (string)($encounter['cama'] ?? '')]));
                                     /** @phpstan-ignore class.notFound */
                                     $timeSeries->AddAttribute('series', '"Type"');
                                     /** @phpstan-ignore class.notFound */

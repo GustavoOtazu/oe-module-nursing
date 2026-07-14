@@ -14,6 +14,7 @@
 require_once(dirname(__DIR__, 6) . "/globals.php");
 
 use Mpdf\Mpdf;
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 
@@ -27,8 +28,12 @@ if (!$pid || !$encounter || !$id) {
     die(xlt("Error: Missing required parameters."));
 }
 
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
+
 // Load ventilation record
-    /** @var array<string, string|int|null>|false $row */
+/** @var array<string, string|int|null>|false $row */
 $row = QueryUtils::querySingleRow("SELECT * FROM form_registro_vm WHERE id = ? AND pid = ? AND encounter = ? LIMIT 1", [$id, $pid, $encounter]);
 if (!$row) {
     die(xlt("Error: Record not found or insufficient permissions."));

@@ -2,7 +2,12 @@
 
 require_once(dirname(__DIR__, 5) . "/globals.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
+
+if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    die(xlt('Access denied'));
+}
 
 $_inicio_raw = filter_input(INPUT_GET, 'inicio');
 $inicio = is_string($_inicio_raw) ? $_inicio_raw : '';
@@ -17,13 +22,9 @@ $result = [];
 $arrayPID = []; //Array gigante nambrena luego
 $iter = 0;
 foreach ($encounters as $encounter) {
-    /** @var string $escaped_inicio */
-    $escaped_inicio = add_escape_custom($inicio);
-    /** @var string $escaped_fin */
-    $escaped_fin = add_escape_custom($fin);
-    $sql_vitals = "SELECT p.fname, v.* FROM form_vitals as v JOIN patient_data as p on p.pid = v.pid  WHERE v.pid =? and v.date between '" . $escaped_inicio . "' and '" . $escaped_fin . "'  ORDER by v.date ASC";
+    $sql_vitals = "SELECT p.fname, v.* FROM form_vitals as v JOIN patient_data as p on p.pid = v.pid WHERE v.pid = ? AND v.date BETWEEN ? AND ? ORDER BY v.date ASC";
     /** @var list<array<string, string|int|null>> $vitalsRows */
-    $vitalsRows = QueryUtils::fetchRecords($sql_vitals, [(string)($encounter['pid'] ?? '')]);
+    $vitalsRows = QueryUtils::fetchRecords($sql_vitals, [(string)($encounter['pid'] ?? ''), $inicio, $fin]);
     $paciente = [];
     if ($vitalsRows !== []) {
         /*
