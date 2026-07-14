@@ -1,0 +1,26 @@
+{
+    "name": "g0tazu/oe-module-nursing",
+    "description": "OpenEMR Nursing Module - Inpatient dashboard, nursing forms, and vital signs",
+    "type": "openemr-module",
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "Gustavo Otazu",
+            "role": "Developer"
+        }
+    ],
+    "keywords": ["openemr", "openemr-module", "nursing", "inpatient", "icu"],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "OpenEMR\\Modules\\Nursing\\": "src/"
+        }
+    },
+    "require": {
+        "openemr/oe-module-installer-plugin": "^0.1.0",
+        "php": ">=8.2"
+    },
+    "conflict": {
+        "openemr/openemr": "<8.1.0"
+    }
+}
