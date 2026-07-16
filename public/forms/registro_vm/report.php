@@ -13,9 +13,15 @@
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 
 $registro_vm_report = function (int $pid, int $encounter, int $cols, int $id): void {
+    if (!AclMain::aclCheckCore('encounters', 'notes')) {
+        echo "<p>" . xlt("Access denied") . "</p>";
+        return;
+    }
+
     /** @var array<string, string|int|null>|false $row */
     $row = QueryUtils::querySingleRow("SELECT * FROM form_registro_vm WHERE id = ? AND pid = ?", [$id, $pid]);
     if (!$row) {

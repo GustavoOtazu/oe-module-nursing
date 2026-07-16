@@ -113,12 +113,8 @@ include("../fusioncharts.php");
                         $arrayPID = []; //Array gigante nambrena luego
                         $iter = 0;
                         foreach ($encounters2 as $encounter) {
-                            /** @var string $esc_inicio2 */
-                            $esc_inicio2 = add_escape_custom($inicio);
-                            /** @var string $esc_fin2 */
-                            $esc_fin2 = add_escape_custom($fin);
                             /** @var list<array<string, string|int|null>> $vitals2 */
-                            $vitals2 = QueryUtils::fetchRecords("SELECT p.fname, v.* FROM form_vitals as v JOIN patient_data as p on p.pid = v.pid  WHERE v.pid =? and v.date between '" . $esc_inicio2 . "' and '" . $esc_fin2 . "'  ORDER by v.date ASC", [(string)($encounter['pid'] ?? '')]);
+                            $vitals2 = QueryUtils::fetchRecords("SELECT p.fname, v.* FROM form_vitals AS v JOIN patient_data AS p ON p.pid = v.pid WHERE v.pid = ? AND v.date BETWEEN ? AND ? ORDER BY v.date ASC", [(string)($encounter['pid'] ?? ''), $inicio, $fin]);
                             $paciente = [];
                             if ($vitals2 !== []) {
                                 foreach ($vitals2 as $row) {

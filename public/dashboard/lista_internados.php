@@ -30,26 +30,37 @@ if (!AclMain::aclCheckCore('encounters', 'notes')) {
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 
-$id_encounter_raw = filter_input(INPUT_GET, 'id_encounter', FILTER_SANITIZE_NUMBER_INT);
-$id_encounter     = ($id_encounter_raw !== null && $id_encounter_raw !== '') ? (int)$id_encounter_raw : null;
-$nombre_paciente  = filter_input(INPUT_GET, 'paciente', FILTER_SANITIZE_SPECIAL_CHARS);
-$death_date       = filter_input(INPUT_GET, 'death_date', FILTER_SANITIZE_SPECIAL_CHARS);
+$action_performed = false;
+$nombre_paciente  = null;
 $update_raw       = filter_input(INPUT_GET, 'update', FILTER_SANITIZE_NUMBER_INT);
 $update           = ($update_raw !== null && $update_raw !== '') ? (int)$update_raw : null;
 
-if ($death_date) {
-    $ts_death = strtotime((string)$death_date);
-    $death_date_safe = $ts_death !== false ? date('Y-m-d', $ts_death) : date('Y-m-d');
-    QueryUtils::sqlStatementThrowException(
-        "UPDATE form_encounter SET date_end = ?, death_date = ? WHERE id = ?",
-        [$death_date_safe, $death_date_safe, $id_encounter]
-    );
-    $id_encounter = null;
-} elseif ($id_encounter) {
-    QueryUtils::sqlStatementThrowException(
-        "UPDATE form_encounter SET date_end = DATE(NOW()) WHERE id = ?",
-        [$id_encounter]
-    );
+if (filter_input(INPUT_SERVER, 'REQUEST_METHOD') === 'POST') {
+    $csrf_token = (string) filter_input(INPUT_POST, 'csrf_token_form');
+    if (!CsrfUtils::verifyCsrfToken($csrf_token, session: $session)) {
+        CsrfUtils::csrfNotVerified();
+    }
+
+    $id_encounter_raw = filter_input(INPUT_POST, 'id_encounter', FILTER_SANITIZE_NUMBER_INT);
+    $id_encounter     = ($id_encounter_raw !== null && $id_encounter_raw !== '') ? (int)$id_encounter_raw : null;
+    $nombre_paciente  = filter_input(INPUT_POST, 'paciente', FILTER_SANITIZE_SPECIAL_CHARS);
+    $death_date       = filter_input(INPUT_POST, 'death_date', FILTER_SANITIZE_SPECIAL_CHARS);
+
+    if ($death_date && $id_encounter) {
+        $ts_death = strtotime((string)$death_date);
+        $death_date_safe = $ts_death !== false ? date('Y-m-d', $ts_death) : date('Y-m-d');
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE form_encounter SET date_end = ?, death_date = ? WHERE id = ?",
+            [$death_date_safe, $death_date_safe, $id_encounter]
+        );
+        $action_performed = true;
+    } elseif ($id_encounter) {
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE form_encounter SET date_end = DATE(NOW()) WHERE id = ?",
+            [$id_encounter]
+        );
+        $action_performed = true;
+    }
 }
 
 // Resolve inpatient category ID by name (portable across installations)
@@ -233,7 +244,7 @@ $nursing_forms = [
                         <i class="fa fa-plus"></i>&nbsp;<?php echo xlt('New Admission'); ?>
                     </button>
                     <br />
-                    <?php if ($id_encounter !== null) : ?>
+                    <?php if ($action_performed) : ?>
                     <div class="alert alert-success alert-dismissible show" role="alert">
                         <?php echo xlt('Patient discharged successfully'); ?>:
                         <strong><?php echo text((string)($nombre_paciente ?? '')); ?></strong>
@@ -353,7 +364,8 @@ $nursing_forms = [
                             <span aria-hidden="true"><i class="fa fa-times"></i></span>
                         </button>
                     </div>
-                    <form method="get" name="form" action="lista_internados.php">
+                    <form method="post" name="form" action="lista_internados.php">
+                        <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>" />
                         <div class="modal-body">
                             <p id="body_alta">
                                 <?php echo xlt('Are you sure you want to discharge the patient'); ?>:

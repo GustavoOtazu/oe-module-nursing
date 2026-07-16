@@ -24,33 +24,27 @@ $_salas_raw = filter_input(INPUT_GET, 'salas');
 $salas = is_string($_salas_raw) ? $_salas_raw : '';
 $_camas_raw = filter_input(INPUT_GET, 'camas');
 $camas = is_string($_camas_raw) ? $_camas_raw : '';
-$query_where = 'where f.pc_catid = 16 and f.out_date is null';
+
+$query_where = 'WHERE f.pc_catid = 16 AND f.out_date IS NULL';
+/** @var list<string> $params */
+$params = [];
 
 if ($salas !== '') {
-    $query_where .= ' and f.cuarto IN (';
     $salas_arr = explode(',', $salas);
-    foreach ($salas_arr as $sala) {
-        /** @var string $escaped_sala */
-        $escaped_sala = add_escape_custom($sala);
-        $query_where .= '"' . $escaped_sala . '",';
-    }
-    $query_where = rtrim($query_where, ',');
-    $query_where .= ')';
+    $placeholders = implode(',', array_fill(0, count($salas_arr), '?'));
+    $query_where .= " AND f.cuarto IN ($placeholders)";
+    $params = array_merge($params, $salas_arr);
 }
 if ($camas !== '') {
-    $query_where .= ' and f.cama IN (';
     $camas_arr = explode(',', $camas);
-    foreach ($camas_arr as $cama) {
-        /** @var string $escaped_cama */
-        $escaped_cama = add_escape_custom($cama);
-        $query_where .= '"' . $escaped_cama . '",';
-    }
-    $query_where = rtrim($query_where, ',');
-    $query_where .= ')';
+    $placeholders = implode(',', array_fill(0, count($camas_arr), '?'));
+    $query_where .= " AND f.cama IN ($placeholders)";
+    $params = array_merge($params, $camas_arr);
 }
-$internados_actuales_consult = "SELECT f.pid, CONCAT(CONCAT(p.fname, ' '),p.lname) as paciente, f.cuarto as sala, f.cama as cama from form_encounter as f join patient_data as p on p.pid = f.pid " . $query_where . "  order by sala, f.cama ASC";
+
+$internados_actuales_consult = "SELECT f.pid, CONCAT(p.fname, ' ', p.lname) AS paciente, f.cuarto AS sala, f.cama AS cama FROM form_encounter AS f JOIN patient_data AS p ON p.pid = f.pid $query_where ORDER BY sala, f.cama ASC";
 /** @var list<array<string, string|int|null>> $rows_internados */
-$rows_internados = QueryUtils::fetchRecords($internados_actuales_consult);
+$rows_internados = QueryUtils::fetchRecords($internados_actuales_consult, $params);
 $result = [];
 foreach ($rows_internados as $row) {
     //encontrar el ultimo form_vitals insertado para este pid y mostrar
