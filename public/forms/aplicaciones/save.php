@@ -111,6 +111,14 @@ if ($is_edit) {
     (new FormService())->addForm($encounter, 'Nursing Applications', (int)$newid, 'aplicaciones', $pid, $authorized);
 }
 
+$from = (filter_input(INPUT_POST, 'from') === 'list') ? 'list' : 'encounter';
 formHeader(xlt("Redirecting..."));
-formJump(OEGlobalsBag::getInstance()->getString('webroot') . "/interface/modules/custom_modules/oe-module-nursing/public/dashboard/lista_internados.php");
+if ($from === 'list') {
+    formJump(OEGlobalsBag::getInstance()->getString('webroot')
+        . "/interface/modules/custom_modules/oe-module-nursing/public/dashboard/lista_internados.php");
+} else {
+    // Encounter forms open in a frame tab: closing it returns to the
+    // encounter's form list, the same thing core encounter forms do.
+    formJump();
+}
 formFooter();

@@ -20,13 +20,14 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
+use OpenEMR\Core\OEGlobalsBag;
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 
 // Get parameters
-$pid       = is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0
+$pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
     ?: (is_numeric($v = $session->get('pid')) ? (int) $v : 0);
-$encounter = is_numeric($v = filter_input(INPUT_GET, 'encounter', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0
+$encounter = (is_numeric($v = filter_input(INPUT_GET, 'encounter', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
     ?: (is_numeric($v = $session->get('encounter')) ? (int) $v : 0);
 $id        = is_numeric($v = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0;
 
@@ -75,13 +76,18 @@ if ($is_edit) {
         $hora_cuidado             = $row['hora_cuidado']             ?? '';
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
-    die(xlt('Access denied'));
-}
     }
 }
 
 $posicion_options = ['DLI', 'DLD', 'DS', 'DV', 'CABECERA 30°'];
 $page_title = $is_edit ? xlt('Edit Care Bundle') : xlt('New Care Bundle');
+$from      = (filter_input(INPUT_GET, 'from') === 'list') ? 'list' : 'encounter';
+$cancel_url = OEGlobalsBag::getInstance()->getString('webroot')
+    . "/interface/modules/custom_modules/oe-module-nursing/public/dashboard/lista_internados.php";
+// Absolute: core load_form.php includes this file from another directory,
+// so a relative action would resolve against /interface/patient_file/encounter/.
+$save_url  = OEGlobalsBag::getInstance()->getString('webroot')
+    . "/interface/modules/custom_modules/oe-module-nursing/public/forms/" . basename(__DIR__) . "/save.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,6 +95,18 @@ $page_title = $is_edit ? xlt('Edit Care Bundle') : xlt('New Care Bundle');
     <meta charset="UTF-8">
     <title><?php echo text($page_title); ?></title>
     <?php Header::setupHeader(); ?>
+    <script>
+        function cancelClicked() {
+<?php if ($from === 'list') : ?>
+            top.RTop.location = <?php echo js_escape($cancel_url); ?>;
+<?php else : ?>
+            // Opened from the encounter as a frame tab: closing it returns to
+            // the encounter's form list, which is the core convention.
+            parent.closeTab(window.name, true);
+<?php endif; ?>
+            return false;
+        }
+    </script>
     <style>
         .nurs-section {
             border-left: 4px solid #3498db;
@@ -120,10 +138,11 @@ $page_title = $is_edit ? xlt('Edit Care Bundle') : xlt('New Care Bundle');
         </div>
     </div>
 
-    <form method="POST" action="save.php" id="formCuidados" onsubmit="top.restoreSession();">
+    <form method="POST" action="<?php echo attr($save_url); ?>" id="formCuidados" onsubmit="top.restoreSession();">
         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>">
         <input type="hidden" name="pid"       value="<?php echo attr((string)$pid); ?>">
         <input type="hidden" name="encounter" value="<?php echo attr((string)$encounter); ?>">
+        <input type="hidden" name="from"      value="<?php echo attr($from); ?>">
         <?php if ($is_edit) : ?>
         <input type="hidden" name="id" value="<?php echo attr((string)$id); ?>">
         <?php endif; ?>
@@ -195,7 +214,7 @@ $page_title = $is_edit ? xlt('Edit Care Bundle') : xlt('New Care Bundle');
             <button type="submit" onclick="top.restoreSession()" class="btn btn-primary">
                 <i class="fas fa-check mr-1"></i><?php echo $is_edit ? xlt('Save Changes') : xlt('Save'); ?>
             </button>
-            <button type="button" onclick="history.back()" class="btn btn-outline-secondary ml-2">
+            <button type="button" onclick="return cancelClicked()" class="btn btn-outline-secondary ml-2">
                 <i class="fas fa-times mr-1"></i><?php echo xlt('Cancel'); ?>
             </button>
         </div>

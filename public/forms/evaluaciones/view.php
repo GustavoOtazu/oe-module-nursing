@@ -12,7 +12,11 @@
  */
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
+/** @var string $srcdir */
+// ESign is not autoloaded; core does the same require in forms.php
+require_once("$srcdir/ESign/Api.php");
 
+use ESign\Api as ESignApi;
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
@@ -20,11 +24,14 @@ use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
-$pid       = is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0
+$pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
     ?: (is_numeric($v = $session->get('pid')) ? (int) $v : 0);
-$encounter = is_numeric($v = filter_input(INPUT_GET, 'encounter', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0
+$encounter = (is_numeric($v = filter_input(INPUT_GET, 'encounter', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
     ?: (is_numeric($v = $session->get('encounter')) ? (int) $v : 0);
 $id        = is_numeric($v = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0;
+$from      = (filter_input(INPUT_GET, 'from') === 'list') ? 'list' : 'encounter';
+$back_url  = OEGlobalsBag::getInstance()->getString('webroot')
+    . "/interface/modules/custom_modules/oe-module-nursing/public/dashboard/lista_internados.php";
 
 if (!$pid || !$encounter) {
     echo "<div class='alert alert-danger m-3'>" . xlt("Could not retrieve PID or Encounter.") . "</div>";
@@ -33,6 +40,26 @@ if (!$pid || !$encounter) {
 
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
     die(xlt('Access denied'));
+}
+
+// By OpenEMR convention view.php opens an existing record for editing, which is
+// why core labels the button "Edit". Hand off to new.php whenever core would
+// have said "Edit"; the read-only detail below is what core calls "View", shown
+// for locked forms and for users without write access.
+if ($id > 0 && AclMain::aclCheckCore('encounters', 'notes', '', 'write')) {
+    $formdir = basename(__DIR__);
+    // core's ESign api keys off forms.id, while $id here is forms.form_id
+    /** @var array<string, string|int|null>|false $formRow */
+    $formRow = QueryUtils::querySingleRow(
+        "SELECT id FROM forms WHERE form_id = ? AND formdir = ? AND encounter = ? AND deleted = 0 LIMIT 1",
+        [$id, $formdir, $encounter]
+    );
+    $isLocked = $formRow !== false
+        && (new ESignApi())->createFormESign((int) $formRow['id'], $formdir, $encounter)->isLocked();
+    if (!$isLocked) {
+        require __DIR__ . '/new.php';
+        return;
+    }
 }
 
 /** @var array<string, string|int|null>|false $paciente */
@@ -59,15 +86,29 @@ if ($id > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo xlt('Nursing Evaluations'); ?></title>
     <?php Header::setupHeader(); ?>
+    <script>
+        function backClicked() {
+<?php if ($from === 'list') : ?>
+            top.RTop.location = <?php echo js_escape($back_url); ?>;
+<?php else : ?>
+            // Opened from the encounter as a frame tab: closing it returns to
+            // the encounter's form list, which is the core convention.
+            parent.closeTab(window.name, true);
+<?php endif; ?>
+            return false;
+        }
+    </script>
     <style>
         .evaluaciones-view * { box-sizing: border-box; }
         .evaluaciones-view .registro-card { border: 1px solid #dee2e6; border-radius: 6px; padding: 20px; margin-bottom: 20px; }
         .evaluaciones-view .glasgow-badge { font-size: 1.1em; font-weight: bold; }
-        .evaluaciones-view .field-detail { background: #f8f9fa; border-radius: 4px; padding: 10px 14px; margin-bottom: 10px; border-left: 4px solid #6c757d; }
-        .evaluaciones-view .field-detail.has-obs { border-left-color: #0d6efd; background: #e7f3ff; }
+        /* Translucent overlays instead of fixed light colors, so the detail
+           panels stay readable under both the light and dark themes. */
+        .evaluaciones-view .field-detail { background: rgba(128, 128, 128, 0.08); border-radius: 4px; padding: 10px 14px; margin-bottom: 10px; border-left: 4px solid #6c757d; }
+        .evaluaciones-view .field-detail.has-obs { border-left-color: #0d6efd; background: rgba(13, 110, 253, 0.10); }
     </style>
 </head>
-<body>
+<body class="body_top">
 <div class="evaluaciones-view container-fluid mt-3">
     <h5 class="border-bottom pb-2">
         <?php echo $id > 0 ? xlt('Evaluation Detail') : xlt('Nursing Evaluations'); ?>
@@ -148,7 +189,7 @@ if ($id > 0) {
     <?php endforeach; ?>
 
     <div class="form-group mt-3">
-        <button type="button" onclick="history.back()" class="btn btn-outline-secondary">
+        <button type="button" onclick="return backClicked()" class="btn btn-outline-secondary">
             <i class="fas fa-chevron-left mr-1"></i><?php echo xlt('Back'); ?>
         </button>
     </div>

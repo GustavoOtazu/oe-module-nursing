@@ -563,7 +563,8 @@ $nursing_forms = [
                 $('#modal_Enf').modal('hide');
                 setTimeout(function() {
                     top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/forms/' + form
-                        + '/new.php?mode=new&id=0&pid=' + pid_sel + '&encounter=' + encounter_sel;
+                        + '/new.php?mode=new&id=0&pid=' + pid_sel + '&encounter=' + encounter_sel
+                        + '&from=list';
                 }, 300);
             });
 

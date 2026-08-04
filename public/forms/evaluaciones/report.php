@@ -16,7 +16,8 @@ require_once(dirname(__DIR__, 6) . "/globals.php");
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 
-$evaluaciones_report = function (int $pid, int $encounter, int $cols, int $id): void {
+function evaluaciones_report(int $pid, int $encounter, int $cols, int $id): void
+{
     if (!AclMain::aclCheckCore('encounters', 'notes')) {
         echo "<p>" . xlt("Access denied") . "</p>";
         return;
@@ -300,5 +301,5 @@ $evaluaciones_report = function (int $pid, int $encounter, int $cols, int $id): 
 
     </div>
     <?php
-};
+}
 ?>
