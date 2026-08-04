@@ -634,39 +634,39 @@ VALUES ('Mechanical Ventilation Record', 1, 'registro_vm', 1, 1, NOW(), 0, 'Nurs
 #EndIf
 
 -- Add carga_ws and death_date columns (WS patient load / inpatient tracking)
-#IfNotColumn patient_data carga_ws
+#IfMissingColumn patient_data carga_ws
 ALTER TABLE `patient_data` ADD COLUMN `carga_ws` VARCHAR(3) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter carga_ws
+#IfMissingColumn form_encounter carga_ws
 ALTER TABLE `form_encounter` ADD COLUMN `carga_ws` VARCHAR(3) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter death_date
+#IfMissingColumn form_encounter death_date
 ALTER TABLE `form_encounter` ADD COLUMN `death_date` date DEFAULT NULL;
 #EndIf
 
 -- Add inpatient bed/location columns to form_encounter
-#IfNotColumn form_encounter departamento
+#IfMissingColumn form_encounter departamento
 ALTER TABLE `form_encounter` ADD COLUMN `departamento` VARCHAR(55) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter servicio
+#IfMissingColumn form_encounter servicio
 ALTER TABLE `form_encounter` ADD COLUMN `servicio` VARCHAR(55) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter cama
+#IfMissingColumn form_encounter cama
 ALTER TABLE `form_encounter` ADD COLUMN `cama` VARCHAR(55) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter out_date
+#IfMissingColumn form_encounter out_date
 ALTER TABLE `form_encounter` ADD COLUMN `out_date` date DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter cuarto
+#IfMissingColumn form_encounter cuarto
 ALTER TABLE `form_encounter` ADD COLUMN `cuarto` VARCHAR(55) DEFAULT NULL;
 #EndIf
 
-#IfNotColumn form_encounter nro_registro
+#IfMissingColumn form_encounter nro_registro
 ALTER TABLE `form_encounter` ADD COLUMN `nro_registro` VARCHAR(40) DEFAULT NULL;
 #EndIf
