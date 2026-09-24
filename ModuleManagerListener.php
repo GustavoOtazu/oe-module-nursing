@@ -44,13 +44,22 @@ class ModuleManagerListener extends AbstractModuleActionListener
 
     private function install($modId, $currentActionStatus): mixed
     {
+        return self::runInstallSql($currentActionStatus, 'install');
+    }
+
+    /**
+     * install.sql is idempotent (every block is guarded by #IfNotTable, #IfNotRow or
+     * #IfMissingColumn), so running it again only adds what an older install is missing.
+     */
+    private static function runInstallSql(string $currentActionStatus, string $action): string
+    {
         try {
             $sqlUpgradeService = new SQLUpgradeService();
             $sqlUpgradeService->setThrowExceptionOnError(true);
             $sqlUpgradeService->setRenderOutputToScreen(false);
             $sqlUpgradeService->upgradeFromSqlFile('install.sql', __DIR__ . '/sql');
         } catch (SqlQueryException $e) {
-            error_log("Nursing module install error: " . $e->getMessage());
+            error_log("Nursing module $action error: " . $e->getMessage());
             return $e->getMessage();
         }
         return $currentActionStatus;
@@ -78,6 +87,8 @@ class ModuleManagerListener extends AbstractModuleActionListener
 
     private function upgrade_sql($modId, $currentActionStatus): mixed
     {
-        return $currentActionStatus;
+        // Adds the tables and forms introduced after the first release
+        // (fluid balance, nutrition, SOFA, APACHE II, care plan).
+        return self::runInstallSql($currentActionStatus, 'upgrade');
     }
 }

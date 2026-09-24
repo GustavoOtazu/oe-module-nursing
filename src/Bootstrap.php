@@ -35,6 +35,11 @@ class Bootstrap
         'cuidados',
         'evaluaciones',
         'registro_vm',
+        'balance_hidrico',
+        'alimentacion',
+        'escala_sofa',
+        'escala_apache',
+        'plan_cuidados',
     ];
 
     public function __construct(
