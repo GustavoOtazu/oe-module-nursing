@@ -23,6 +23,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -67,6 +68,8 @@ $enfermedad_cronica        = 0;
 $tipo_ingreso              = '';
 $hora_registro             = '';
 $observaciones             = '';
+/** @var array<string, array{value: string, note: string}> $prefill */
+$prefill                   = [];
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -96,19 +99,15 @@ if ($is_edit) {
         }
     }
 
-    // Prefill Glasgow from the latest nursing evaluation of this encounter
-    /** @var array<string, string|int|null>|false $gcsRow */
-    $gcsRow = QueryUtils::querySingleRow(
-        "SELECT e.glasgow_total
-           FROM form_evaluaciones e
-           JOIN forms f ON f.form_id = e.id AND f.formdir = 'evaluaciones' AND f.deleted = 0
-          WHERE e.pid = ? AND e.encounter = ? AND e.glasgow_total >= 3 AND e.glasgow_total <= 15
-          ORDER BY e.date DESC, e.id DESC
-          LIMIT 1",
-        [$pid, $encounter]
-    );
-    if ($gcsRow !== false && (int)($gcsRow['glasgow_total'] ?? 0) > 0) {
-        $vals['glasgow'] = (string)(int)$gcsRow['glasgow_total'];
+    // Prefill every physiological variable with its worst value in the first
+    // 24 h of the admission (Knaus et al., 1985), taken from vital signs, nursing
+    // evaluations, ventilation records and previous scores (see ClinicalPrefill).
+    // The nurse reviews each value before saving.
+    $prefill = (new ClinicalPrefill($pid, $encounter))->forApache();
+    foreach ($prefill as $field => $data) {
+        if (array_key_exists($field, $vals)) {
+            $vals[$field] = $data['value'];
+        }
     }
 }
 
@@ -128,7 +127,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
     . "/interface/modules/custom_modules/oe-module-nursing/public/forms/" . basename(__DIR__) . "/save.php";
 
 // Renders one numeric input. Labels, units and help come from xl() and are escaped here.
-$numInput = static function (string $name, string $label, string $unit, string $value, string $min, string $max, string $step, string $help = ''): void {
+$numInput = static function (string $name, string $label, string $unit, string $value, string $min, string $max, string $step, string $help = '') use ($prefill): void {
     ?>
     <div class="col-lg-3 col-md-4 col-sm-6 form-group">
         <label for="<?php echo attr($name); ?>" class="font-weight-bold"><?php echo text($label); ?></label>
@@ -142,6 +141,9 @@ $numInput = static function (string $name, string $label, string $unit, string $
         </div>
         <?php if ($help !== '') : ?>
         <small class="form-text text-muted"><?php echo text($help); ?></small>
+        <?php endif; ?>
+        <?php if (isset($prefill[$name])) : ?>
+        <small class="form-text prefill-hint"><i class="fa fa-history mr-1"></i><?php echo text($prefill[$name]['note']); ?> — <?php echo xlt('Review before saving'); ?></small>
         <?php endif; ?>
     </div>
     <?php
@@ -200,6 +202,7 @@ $numInput = static function (string $name, string $label, string $unit, string $
         }
         .apache-form .mode-create { background: #28a745; color: #fff; }
         .apache-form .mode-edit   { background: #ffc107; color: #000; }
+            .prefill-hint { color: #0d6efd; opacity: 0.9; font-size: 11px; }
     </style>
 </head>
 <body class="body_top">
@@ -299,7 +302,7 @@ $numInput = static function (string $name, string $label, string $unit, string $
             <h6 class="font-weight-bold"><?php echo xlt('Neurological'); ?></h6>
             <div class="row">
                 <?php
-                $numInput('glasgow', xl('Glasgow Coma Scale'), '3-15', $vals['glasgow'], '3', '15', '1', $is_edit ? '' : xl('Prefilled from the latest nursing evaluation, if any'));
+                $numInput('glasgow', xl('Glasgow Coma Scale'), '3-15', $vals['glasgow'], '3', '15', '1', '');
                 ?>
             </div>
         </div>

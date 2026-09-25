@@ -947,7 +947,6 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Oxygenation', 'Oxigenación'),
   ('Points', 'Puntos'),
   ('Potassium', 'Potasio'),
-  ('Prefilled from the latest nursing evaluation, if any', 'Precargado de la última evaluación de enfermería, si existe'),
   ('Rectal temperature', 'Temperatura rectal'),
   ('Reference', 'Referencia'),
   ('Respiratory rate', 'Frecuencia respiratoria'),
@@ -1042,7 +1041,6 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Epinephrine', 'Adrenalina'),
   ('Norepinephrine', 'Noradrenalina'),
   ('Vasopressor doses administered for at least 1 hour', 'Dosis de vasopresores administradas durante al menos 1 hora'),
-  ('Prefilled from the latest nursing evaluation of this encounter', 'Precargado desde la última evaluación de enfermería de esta atención'),
   ('systems evaluated', 'sistemas evaluados'),
   ('Low', 'Bajo'),
   ('Intermediate', 'Intermedio'),
@@ -1052,7 +1050,19 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Values', 'Valores'),
   ('Total Score', 'Puntaje total'),
   ('Respiratory system', 'Sistema respiratorio'),
-  ('Mixed feeding', 'Mixta');
+  ('Mixed feeding', 'Mixta'),
+  ('Worst value of the first 24 h of the admission', 'Peor valor de las primeras 24 h de internación'),
+  ('Worst value of the last 24 h', 'Peor valor de las últimas 24 h'),
+  ('vital signs', 'signos vitales'),
+  ('ventilation record', 'registro de ventilación'),
+  ('nursing evaluation', 'evaluación de enfermería'),
+  ('Mechanical ventilation recorded in the last 24 h', 'Ventilación mecánica registrada en las últimas 24 h'),
+  ('Sum of %d fluid balances of the last 24 h', 'Suma de %d balances hídricos de las últimas 24 h'),
+  ('last', 'último'),
+  ('in the last 24 h', 'en las últimas 24 h'),
+  ('since the previous fluid balance', 'desde el balance hídrico anterior'),
+  ('Sum of %d nutrition records', 'Suma de %d registros de alimentación'),
+  ('Review before saving', 'Revisar antes de guardar');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_uti_lang t

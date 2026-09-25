@@ -23,6 +23,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
 $pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
@@ -57,7 +58,8 @@ $creatinina           = '';
 $diuresis_24h         = '';
 $hora_registro        = '';
 $observaciones        = '';
-$glasgow_prefilled    = false;
+/** @var array<string, array{value: string, note: string}> $prefill */
+$prefill              = [];
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -82,26 +84,31 @@ if ($is_edit) {
         die(xlt("Error: Record not found or insufficient permissions."));
     }
 } else {
-    // Prefill the CNS component from the latest Glasgow recorded by a
-    // (non-deleted) nursing evaluation in this same encounter.
-    /** @var array<string, string|int|null>|false $lastEval */
-    $lastEval = QueryUtils::querySingleRow(
-        "SELECT e.glasgow_total
-           FROM form_evaluaciones e
-           JOIN forms f ON f.form_id = e.id AND f.formdir = 'evaluaciones' AND f.deleted = 0
-          WHERE e.pid = ? AND e.encounter = ? AND e.glasgow_total > 0
-          ORDER BY e.date DESC, e.id DESC
-          LIMIT 1",
-        [$pid, $encounter]
-    );
-    if ($lastEval !== false) {
-        $last_glasgow = (int)($lastEval['glasgow_total'] ?? 0);
-        if ($last_glasgow >= 3 && $last_glasgow <= 15) {
-            $glasgow           = (string)$last_glasgow;
-            $glasgow_prefilled = true;
-        }
+    // Prefill with the worst value of each system in the last 24 h, taken from
+    // vital signs, nursing evaluations, ventilation records, fluid balances and
+    // previous scores (see ClinicalPrefill). The nurse reviews it before saving.
+    $prefill = (new ClinicalPrefill($pid, $encounter))->forSofa();
+    $pao2         = $prefill['pao2']['value']         ?? $pao2;
+    $fio2         = $prefill['fio2']['value']         ?? $fio2;
+    $plaquetas    = $prefill['plaquetas']['value']    ?? $plaquetas;
+    $bilirrubina  = $prefill['bilirrubina']['value']  ?? $bilirrubina;
+    $pam          = $prefill['pam']['value']          ?? $pam;
+    $glasgow      = $prefill['glasgow']['value']      ?? $glasgow;
+    $creatinina   = $prefill['creatinina']['value']   ?? $creatinina;
+    $diuresis_24h = $prefill['diuresis_24h']['value'] ?? $diuresis_24h;
+    if (isset($prefill['soporte_respiratorio'])) {
+        $soporte_respiratorio = 1;
     }
 }
+
+// Shows where a prefilled value came from, so it can be checked before saving.
+$hint = static function (string $field) use ($prefill): void {
+    if (!isset($prefill[$field])) {
+        return;
+    }
+    echo '<span class="field-hint prefill-hint"><i class="fa fa-history mr-1"></i>'
+        . text($prefill[$field]['note']) . ' — ' . xlt('Review before saving') . '</span>';
+};
 
 $page_title = $is_edit ? xlt('Edit SOFA Score') : xlt('New SOFA Score');
 $from      = (filter_input(INPUT_GET, 'from') === 'list') ? 'list' : 'encounter';
@@ -150,6 +157,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         }
         .sofa-form .sub-badge.scored { background: rgba(52, 152, 219, 0.20); }
         .sofa-form .field-hint { font-size: 11px; opacity: 0.75; }
+        .sofa-form .prefill-hint { display: block; color: #0d6efd; opacity: 0.9; }
         .sofa-form .sofa-summary {
             border-radius: 6px; padding: 15px 20px; margin-bottom: 20px;
             border: 1px solid rgba(128, 128, 128, 0.35); border-left: 6px solid #6c757d;
@@ -203,11 +211,13 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="pao2">PaO2 (mmHg)</label>
                     <input type="number" class="form-control" name="pao2" id="pao2" min="0" max="999.9" step="0.1"
                            inputmode="decimal" value="<?php echo attr($pao2); ?>">
+                    <?php $hint('pao2'); ?>
                 </div>
                 <div class="form-group col-sm-4">
                     <label for="fio2">FiO2</label>
                     <input type="number" class="form-control" name="fio2" id="fio2" min="0.21" max="100" step="0.01"
                            inputmode="decimal" value="<?php echo attr($fio2); ?>">
+                    <?php $hint('fio2'); ?>
                     <span class="field-hint"><?php echo xlt('Fraction 0.21-1.0 or percentage 21-100'); ?></span>
                 </div>
                 <div class="form-group col-sm-4">
@@ -220,6 +230,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                        <?php echo ($soporte_respiratorio === 1) ? 'checked' : ''; ?>>
                 <label class="form-check-label" for="soporte_respiratorio"><?php echo xlt('Mechanical ventilation / respiratory support'); ?></label>
             </div>
+            <?php $hint('soporte_respiratorio'); ?>
             <span class="field-hint"><?php echo xlt('Scores 3 and 4 require respiratory support'); ?></span>
         </div>
 
@@ -234,6 +245,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="plaquetas"><?php echo xlt('Platelets'); ?> (x10³/µL)</label>
                     <input type="number" class="form-control" name="plaquetas" id="plaquetas" min="0" max="9999" step="1"
                            inputmode="decimal" value="<?php echo attr($plaquetas); ?>">
+                    <?php $hint('plaquetas'); ?>
                 </div>
             </div>
         </div>
@@ -249,6 +261,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="bilirrubina"><?php echo xlt('Bilirubin'); ?> (mg/dL)</label>
                     <input type="number" class="form-control" name="bilirrubina" id="bilirrubina" min="0" max="99.99" step="0.01"
                            inputmode="decimal" value="<?php echo attr($bilirrubina); ?>">
+                    <?php $hint('bilirrubina'); ?>
                 </div>
             </div>
         </div>
@@ -264,6 +277,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="pam"><?php echo xlt('Mean arterial pressure (MAP)'); ?> (mmHg)</label>
                     <input type="number" class="form-control" name="pam" id="pam" min="0" max="300" step="1"
                            inputmode="decimal" value="<?php echo attr($pam); ?>">
+                    <?php $hint('pam'); ?>
                 </div>
                 <div class="form-group col-sm-4">
                     <label for="dopamina"><?php echo xlt('Dopamine'); ?> (µg/kg/min)</label>
@@ -304,9 +318,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="glasgow"><?php echo xlt('Glasgow Coma Scale'); ?> (3-15)</label>
                     <input type="number" class="form-control" name="glasgow" id="glasgow" min="3" max="15" step="1"
                            inputmode="numeric" value="<?php echo attr($glasgow); ?>">
-                    <?php if ($glasgow_prefilled) : ?>
-                    <span class="field-hint"><?php echo xlt('Prefilled from the latest nursing evaluation of this encounter'); ?></span>
-                    <?php endif; ?>
+                    <?php $hint('glasgow'); ?>
                 </div>
             </div>
         </div>
@@ -322,11 +334,13 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                     <label for="creatinina"><?php echo xlt('Creatinine'); ?> (mg/dL)</label>
                     <input type="number" class="form-control" name="creatinina" id="creatinina" min="0" max="99.99" step="0.01"
                            inputmode="decimal" value="<?php echo attr($creatinina); ?>">
+                    <?php $hint('creatinina'); ?>
                 </div>
                 <div class="form-group col-sm-4">
                     <label for="diuresis_24h"><?php echo xlt('Urine output'); ?> (mL/24h)</label>
                     <input type="number" class="form-control" name="diuresis_24h" id="diuresis_24h" min="0" max="99999" step="1"
                            inputmode="decimal" value="<?php echo attr($diuresis_24h); ?>">
+                    <?php $hint('diuresis_24h'); ?>
                 </div>
             </div>
         </div>

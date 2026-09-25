@@ -21,6 +21,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
 use OpenEMR\Modules\Nursing\Scoring\FluidBalance;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -72,6 +73,8 @@ foreach (array_merge(FluidBalance::INTAKE_FIELDS, FluidBalance::OUTPUT_FIELDS) a
 $turno         = '';
 $hora_registro = '';
 $observaciones = '';
+/** @var array<string, array{value: string, note: string}> $prefill */
+$prefill       = [];
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -85,6 +88,15 @@ if ($is_edit) {
         $observaciones = (string)($row['observaciones'] ?? '');
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
+    }
+} else {
+    // Oral, enteral and parenteral intake from the nutrition records entered
+    // since the previous fluid balance, so they are not typed twice.
+    $prefill = (new ClinicalPrefill($pid, $encounter))->forFluidBalance();
+    foreach ($prefill as $field => $data) {
+        if (array_key_exists($field, $values)) {
+            $values[$field] = $data['value'];
+        }
     }
 }
 
@@ -156,6 +168,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         }
         .balance-hidrico-form .mode-create { background: #28a745; color: #fff; }
         .balance-hidrico-form .mode-edit   { background: #ffc107; color: #000; }
+            .prefill-hint { color: #0d6efd; opacity: 0.9; font-size: 11px; }
     </style>
 </head>
 <body class="body_top">
@@ -213,6 +226,9 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
                                class="form-control bh-input bh-intake" value="<?php echo attr($values[$field]); ?>">
                         <div class="input-group-append"><span class="input-group-text">mL</span></div>
                     </div>
+                    <?php if (isset($prefill[$field])) : ?>
+                    <small class="form-text prefill-hint"><i class="fa fa-history mr-1"></i><?php echo text($prefill[$field]['note']); ?> — <?php echo xlt('Review before saving'); ?></small>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             </div>
