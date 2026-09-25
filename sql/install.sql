@@ -871,7 +871,7 @@ VALUES ('Nursing Care Plan', 1, 'plan_cuidados', 1, 1, NOW(), 0, 'Nursing', 1, '
 -- definition yet for the language. Existing (core) translations are never
 -- changed, and the block is safe to run on every upgrade.
 DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;
-CREATE TEMPORARY TABLE nursing_uti_lang (cn VARCHAR(255) NOT NULL, es TEXT NOT NULL) DEFAULT CHARSET=utf8mb4;
+CREATE TEMPORARY TABLE nursing_uti_lang (cn VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
 INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Oral', 'Oral'),
   ('Enteral', 'Enteral'),
