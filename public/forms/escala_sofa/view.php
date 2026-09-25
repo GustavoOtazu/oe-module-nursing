@@ -95,7 +95,7 @@ $sofaSystems = static function (array $row) use ($fmt): array {
     $points = static fn(mixed $value): ?int => ($value === null || $value === '') ? null : (int) $value;
 
     return [
-        [xl('Respiratory'), $join([
+        [xl('Respiratory system'), $join([
             $with('PaO2', $row['pao2'] ?? null, 'mmHg'),
             $with('FiO2', $row['fio2'] ?? null),
             ((int)($row['soporte_respiratorio'] ?? 0) === 1) ? xl('Mechanical ventilation / respiratory support') : '',

@@ -62,7 +62,7 @@ $with = static fn(string $prefix, mixed $value, string $unit = ''): string
 $points = static fn(mixed $value): ?int => ($value === null || $value === '') ? null : (int) $value;
 
 $systems = [
-    [xl('Respiratory'), $join([
+    [xl('Respiratory system'), $join([
         $with('PaO2', $row['pao2'] ?? null, 'mmHg'),
         $with('FiO2', $row['fio2'] ?? null),
         ((int)($row['soporte_respiratorio'] ?? 0) === 1) ? xl('Mechanical ventilation / respiratory support') : '',

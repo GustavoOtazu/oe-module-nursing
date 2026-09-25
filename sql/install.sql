@@ -865,379 +865,207 @@ VALUES ('Nursing Care Plan', 1, 'plan_cuidados', 1, 1, NOW(), 0, 'Nursing', 1, '
 #EndIf
 
 -- Spanish translations for the UTI extension forms.
--- INSERT IGNORE keeps any translation that already exists (core or custom),
--- so generic words such as "Value" or "None" are not changed elsewhere.
-#IfNotRow lang_constants constant_name NURSING FLUID BALANCE RECORD
-INSERT IGNORE INTO lang_constants (constant_name) VALUES
-  ('Oral'),
-  ('Enteral'),
-  ('Parenteral'),
-  ('Mixed'),
-  ('Fasting'),
-  ('Nasogastric tube'),
-  ('Nasojejunal tube'),
-  ('Gastrostomy'),
-  ('Jejunostomy'),
-  ('Continuous'),
-  ('Intermittent'),
-  ('Bolus'),
-  ('Good'),
-  ('Fair'),
-  ('Poor'),
-  ('Vomiting'),
-  ('Abdominal distension'),
-  ('Diarrhea'),
-  ('High gastric residual'),
-  ('New Nursing Nutrition'),
-  ('Edit Nursing Nutrition'),
-  ('Nursing Nutrition'),
-  ('Nutrition Detail'),
-  ('No nutrition records'),
-  ('Feeding Type'),
-  ('Enteral Route'),
-  ('Modality'),
-  ('Formula / Diet'),
-  ('Volume'),
-  ('Infusion Rate'),
-  ('Gastric Residual'),
-  ('Tolerance'),
-  ('Signs of Intolerance'),
-  ('Record Time'),
-  ('None'),
-  ('Value'),
-  ('NURSING NUTRITION RECORD'),
-  ('Acid-base'),
-  ('Acute physiology'),
-  ('Acute physiology subtotal'),
-  ('Acute renal failure'),
-  ('Admission type'),
-  ('Age and chronic health'),
-  ('Age points'),
-  ('APACHE II Detail'),
-  ('APACHE II Score'),
-  ('APACHE II SCORE RECORD'),
-  ('Arterial pH'),
-  ('Chronic health'),
-  ('Chronic health points'),
-  ('Creatinine'),
-  ('creatinine points doubled'),
-  ('Edit APACHE II Score'),
-  ('Elective postoperative'),
-  ('Emergency postoperative'),
-  ('Error: Value out of range'),
-  ('Fraction (0.21-1) or percentage (21-100)'),
-  ('Heart rate'),
-  ('Hematocrit'),
-  ('Higher severity'),
-  ('History of severe organ insufficiency or immunocompromise'),
-  ('Laboratory'),
-  ('Lower severity'),
-  ('Mean arterial pressure'),
-  ('Moderate severity'),
-  ('Neurological'),
-  ('New APACHE II Score'),
-  ('No'),
-  ('No APACHE II scores recorded'),
-  ('Non-operative'),
-  ('Not evaluated'),
-  ('Only if no arterial blood gas'),
-  ('Oxygenation'),
-  ('Points'),
-  ('Potassium'),
-  ('Prefilled from the latest nursing evaluation, if any'),
-  ('Rectal temperature'),
-  ('Reference'),
-  ('Respiratory rate'),
-  ('Serum HCO3'),
-  ('Sodium'),
-  ('Use the worst value of the first 24 hours'),
-  ('Variable'),
-  ('variables evaluated'),
-  ('Variables left empty add 0 points and are reported as not evaluated'),
-  ('Vital signs'),
-  ('White blood cells'),
-  ('With FiO2 ≥ 0.5 the A-aDO2 gradient is used; otherwise PaO2'),
-  ('Yes'),
-  ('Oral intake'),
-  ('Enteral nutrition'),
-  ('Parenteral nutrition'),
-  ('IV fluids'),
-  ('IV medication'),
-  ('Blood products'),
-  ('Other intake'),
-  ('Urine output'),
-  ('Drains'),
-  ('Stools'),
-  ('Insensible losses'),
-  ('Other output'),
-  ('Total intake'),
-  ('Total output'),
-  ('Fluid balance'),
-  ('Shift'),
-  ('Morning'),
-  ('Afternoon'),
-  ('Night'),
-  ('Intake'),
-  ('Output'),
-  ('Edit Nursing Fluid Balance'),
-  ('New Nursing Fluid Balance'),
-  ('Nursing Fluid Balance'),
-  ('Fluid Balance Detail'),
-  ('No fluid balance records'),
-  ('No values recorded'),
-  ('Positive balance'),
-  ('Negative balance'),
-  ('Neutral balance'),
-  ('NURSING FLUID BALANCE RECORD'),
-  ('Fluid Balance'),
-  ('Nutrition'),
-  ('Care Plan'),
-  ('Achieved'),
-  ('Care Plan Detail'),
-  ('Diagnosis code'),
-  ('Diagnosis code (optional)'),
-  ('Edit Nursing Care Plan'),
-  ('e.g. NANDA-I or ICNP code'),
-  ('Enter at least a nursing diagnosis or a shift progress note.'),
-  ('Goal / expected outcome'),
-  ('In progress'),
-  ('New Nursing Care Plan'),
-  ('No care plans recorded'),
-  ('Not achieved'),
-  ('Nursing Care Plan'),
-  ('NURSING CARE PLAN RECORD'),
-  ('Nursing diagnosis'),
-  ('Nursing interventions'),
-  ('Outcome evaluation'),
-  ('Partially achieved'),
-  ('Relevant events of the shift'),
-  ('Shift progress note'),
-  ('What care will be/was provided?'),
-  ('What do you expect to achieve and by when?'),
-  ('What problem or risk did you identify?'),
-  ('SOFA Score'),
-  ('New SOFA Score'),
-  ('Edit SOFA Score'),
-  ('SOFA Score Detail'),
-  ('SOFA SCORE RECORD'),
-  ('No SOFA scores recorded'),
-  ('Sequential Organ Failure Assessment'),
-  ('Respiratory'),
-  ('Coagulation'),
-  ('Liver'),
-  ('Cardiovascular'),
-  ('Central nervous system'),
-  ('Renal'),
-  ('PaO2/FiO2 ratio'),
-  ('Fraction 0.21-1.0 or percentage 21-100'),
-  ('Mechanical ventilation / respiratory support'),
-  ('Scores 3 and 4 require respiratory support'),
-  ('Platelets'),
-  ('Bilirubin'),
-  ('Mean arterial pressure (MAP)'),
-  ('MAP'),
-  ('Dopamine'),
-  ('Dobutamine'),
-  ('Dobutamine (any dose)'),
-  ('Epinephrine'),
-  ('Norepinephrine'),
-  ('Vasopressor doses administered for at least 1 hour'),
-  ('Prefilled from the latest nursing evaluation of this encounter'),
-  ('systems evaluated'),
-  ('Low'),
-  ('Intermediate'),
-  ('High'),
-  ('points'),
-  ('System'),
-  ('Values'),
-  ('Total Score');
+-- lang_constants and lang_definitions have no unique keys, so INSERT IGNORE
+-- would duplicate existing rows. Instead, a constant is added only when no
+-- constant with that name exists, and a definition only when that text has no
+-- definition yet for the language. Existing (core) translations are never
+-- changed, and the block is safe to run on every upgrade.
+DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;
+CREATE TEMPORARY TABLE nursing_uti_lang (cn VARCHAR(255) NOT NULL, es TEXT NOT NULL) DEFAULT CHARSET=utf8mb4;
+INSERT INTO nursing_uti_lang (cn, es) VALUES
+  ('Oral', 'Oral'),
+  ('Enteral', 'Enteral'),
+  ('Parenteral', 'Parenteral'),
+  ('Fasting', 'Ayuno'),
+  ('Nasogastric tube', 'Sonda nasogástrica'),
+  ('Nasojejunal tube', 'Sonda nasoyeyunal'),
+  ('Gastrostomy', 'Gastrostomía'),
+  ('Jejunostomy', 'Yeyunostomía'),
+  ('Continuous', 'Continua'),
+  ('Intermittent', 'Intermitente'),
+  ('Bolus', 'Bolo'),
+  ('Good', 'Buena'),
+  ('Fair', 'Regular'),
+  ('Poor', 'Mala'),
+  ('Vomiting', 'Vómitos'),
+  ('Abdominal distension', 'Distensión abdominal'),
+  ('Diarrhea', 'Diarrea'),
+  ('High gastric residual', 'Residuo gástrico alto'),
+  ('New Nursing Nutrition', 'Nuevo registro de alimentación'),
+  ('Edit Nursing Nutrition', 'Editar registro de alimentación'),
+  ('Nursing Nutrition', 'Alimentación de enfermería'),
+  ('Nutrition Detail', 'Detalle de alimentación'),
+  ('No nutrition records', 'No hay registros de alimentación'),
+  ('Feeding Type', 'Tipo de alimentación'),
+  ('Enteral Route', 'Vía enteral'),
+  ('Modality', 'Modalidad'),
+  ('Formula / Diet', 'Fórmula / Dieta'),
+  ('Volume', 'Volumen'),
+  ('Infusion Rate', 'Velocidad de infusión'),
+  ('Gastric Residual', 'Residuo gástrico'),
+  ('Tolerance', 'Tolerancia'),
+  ('Signs of Intolerance', 'Signos de intolerancia'),
+  ('Record Time', 'Hora de registro'),
+  ('None', 'Ninguno'),
+  ('Value', 'Valor'),
+  ('NURSING NUTRITION RECORD', 'REGISTRO DE ALIMENTACIÓN DE ENFERMERÍA'),
+  ('Acid-base', 'Ácido-base'),
+  ('Acute physiology', 'Fisiología aguda'),
+  ('Acute physiology subtotal', 'Subtotal fisiología aguda'),
+  ('Acute renal failure', 'Insuficiencia renal aguda'),
+  ('Admission type', 'Tipo de ingreso'),
+  ('Age and chronic health', 'Edad y salud crónica'),
+  ('Age points', 'Puntos por edad'),
+  ('APACHE II Detail', 'Detalle APACHE II'),
+  ('APACHE II Score', 'Escala APACHE II'),
+  ('APACHE II SCORE RECORD', 'REGISTRO DE ESCALA APACHE II'),
+  ('Arterial pH', 'pH arterial'),
+  ('Chronic health', 'Salud crónica'),
+  ('Chronic health points', 'Puntos por enfermedad crónica'),
+  ('Creatinine', 'Creatinina'),
+  ('creatinine points doubled', 'puntos de creatinina duplicados'),
+  ('Edit APACHE II Score', 'Editar escala APACHE II'),
+  ('Elective postoperative', 'Postoperatorio electivo'),
+  ('Emergency postoperative', 'Postoperatorio de urgencia'),
+  ('Error: Value out of range', 'Error: Valor fuera de rango'),
+  ('Fraction (0.21-1) or percentage (21-100)', 'Fracción (0,21-1) o porcentaje (21-100)'),
+  ('Heart rate', 'Frecuencia cardíaca'),
+  ('Hematocrit', 'Hematocrito'),
+  ('Higher severity', 'Mayor gravedad'),
+  ('History of severe organ insufficiency or immunocompromise', 'Antecedente de insuficiencia orgánica grave o inmunocompromiso'),
+  ('Laboratory', 'Laboratorio'),
+  ('Lower severity', 'Menor gravedad'),
+  ('Mean arterial pressure', 'Presión arterial media'),
+  ('Moderate severity', 'Gravedad moderada'),
+  ('Neurological', 'Neurológico'),
+  ('New APACHE II Score', 'Nueva escala APACHE II'),
+  ('No', 'No'),
+  ('No APACHE II scores recorded', 'No hay escalas APACHE II registradas'),
+  ('Non-operative', 'No quirúrgico'),
+  ('Not evaluated', 'No evaluado'),
+  ('Only if no arterial blood gas', 'Solo si no hay gasometría arterial'),
+  ('Oxygenation', 'Oxigenación'),
+  ('Points', 'Puntos'),
+  ('Potassium', 'Potasio'),
+  ('Prefilled from the latest nursing evaluation, if any', 'Precargado de la última evaluación de enfermería, si existe'),
+  ('Rectal temperature', 'Temperatura rectal'),
+  ('Reference', 'Referencia'),
+  ('Respiratory rate', 'Frecuencia respiratoria'),
+  ('Serum HCO3', 'HCO3 sérico'),
+  ('Sodium', 'Sodio'),
+  ('Use the worst value of the first 24 hours', 'Utilice el peor valor de las primeras 24 horas'),
+  ('Variable', 'Variable'),
+  ('variables evaluated', 'variables evaluadas'),
+  ('Variables left empty add 0 points and are reported as not evaluated', 'Las variables vacías suman 0 puntos y se informan como no evaluadas'),
+  ('Vital signs', 'Signos vitales'),
+  ('White blood cells', 'Leucocitos'),
+  ('With FiO2 ≥ 0.5 the A-aDO2 gradient is used; otherwise PaO2', 'Con FiO2 ≥ 0,5 se usa el gradiente A-aDO2; de lo contrario, la PaO2'),
+  ('Yes', 'Sí'),
+  ('Oral intake', 'Vía oral'),
+  ('Enteral nutrition', 'Nutrición enteral'),
+  ('Parenteral nutrition', 'Nutrición parenteral'),
+  ('IV fluids', 'Sueros'),
+  ('IV medication', 'Medicación endovenosa'),
+  ('Blood products', 'Hemoderivados'),
+  ('Other intake', 'Otros ingresos'),
+  ('Urine output', 'Diuresis'),
+  ('Drains', 'Drenajes'),
+  ('Stools', 'Deposiciones'),
+  ('Insensible losses', 'Pérdidas insensibles'),
+  ('Other output', 'Otros egresos'),
+  ('Total intake', 'Total de ingresos'),
+  ('Total output', 'Total de egresos'),
+  ('Fluid balance', 'Balance hídrico'),
+  ('Shift', 'Turno'),
+  ('Morning', 'Mañana'),
+  ('Afternoon', 'Tarde'),
+  ('Night', 'Noche'),
+  ('Intake', 'Ingresos'),
+  ('Output', 'Egresos'),
+  ('Edit Nursing Fluid Balance', 'Editar balance hídrico de enfermería'),
+  ('New Nursing Fluid Balance', 'Nuevo balance hídrico de enfermería'),
+  ('Nursing Fluid Balance', 'Balance hídrico de enfermería'),
+  ('Fluid Balance Detail', 'Detalle del balance hídrico'),
+  ('No fluid balance records', 'No hay registros de balance hídrico'),
+  ('No values recorded', 'No se registraron valores'),
+  ('Positive balance', 'Balance positivo'),
+  ('Negative balance', 'Balance negativo'),
+  ('Neutral balance', 'Balance neutro'),
+  ('NURSING FLUID BALANCE RECORD', 'REGISTRO DE BALANCE HÍDRICO DE ENFERMERÍA'),
+  ('Fluid Balance', 'Balance Hídrico'),
+  ('Achieved', 'Logrado'),
+  ('Care Plan Detail', 'Detalle del plan de cuidados'),
+  ('Diagnosis code', 'Código de diagnóstico'),
+  ('Diagnosis code (optional)', 'Código de diagnóstico (opcional)'),
+  ('Edit Nursing Care Plan', 'Editar plan de cuidados de enfermería'),
+  ('e.g. NANDA-I or ICNP code', 'p. ej. código NANDA-I o CIPE (ICNP)'),
+  ('Enter at least a nursing diagnosis or a shift progress note.', 'Ingrese al menos un diagnóstico de enfermería o una evolución del turno.'),
+  ('Goal / expected outcome', 'Objetivo / resultado esperado'),
+  ('In progress', 'En curso'),
+  ('New Nursing Care Plan', 'Nuevo plan de cuidados de enfermería'),
+  ('No care plans recorded', 'No hay planes de cuidados registrados'),
+  ('Not achieved', 'No logrado'),
+  ('Nursing Care Plan', 'Plan de cuidados de enfermería'),
+  ('NURSING CARE PLAN RECORD', 'REGISTRO DE PLAN DE CUIDADOS DE ENFERMERÍA'),
+  ('Nursing diagnosis', 'Diagnóstico de enfermería'),
+  ('Nursing interventions', 'Intervenciones de enfermería'),
+  ('Outcome evaluation', 'Evaluación del resultado'),
+  ('Partially achieved', 'Parcialmente logrado'),
+  ('Relevant events of the shift', 'Eventos relevantes del turno'),
+  ('Shift progress note', 'Evolución de enfermería del turno'),
+  ('What care will be/was provided?', '¿Qué cuidados se brindarán/se brindaron?'),
+  ('What do you expect to achieve and by when?', '¿Qué espera lograr y para cuándo?'),
+  ('What problem or risk did you identify?', '¿Qué problema o riesgo identificó?'),
+  ('SOFA Score', 'Escala SOFA'),
+  ('New SOFA Score', 'Nueva escala SOFA'),
+  ('Edit SOFA Score', 'Editar escala SOFA'),
+  ('SOFA Score Detail', 'Detalle de escala SOFA'),
+  ('SOFA SCORE RECORD', 'REGISTRO DE ESCALA SOFA'),
+  ('No SOFA scores recorded', 'No hay escalas SOFA registradas'),
+  ('Sequential Organ Failure Assessment', 'Evaluación Secuencial de Falla Orgánica'),
+  ('Coagulation', 'Coagulación'),
+  ('Liver', 'Hepático'),
+  ('Cardiovascular', 'Cardiovascular'),
+  ('Central nervous system', 'Sistema nervioso central'),
+  ('Renal', 'Renal'),
+  ('PaO2/FiO2 ratio', 'Relación PaO2/FiO2'),
+  ('Fraction 0.21-1.0 or percentage 21-100', 'Fracción 0,21-1,0 o porcentaje 21-100'),
+  ('Mechanical ventilation / respiratory support', 'Ventilación mecánica / soporte respiratorio'),
+  ('Scores 3 and 4 require respiratory support', 'Los puntajes 3 y 4 requieren soporte respiratorio'),
+  ('Platelets', 'Plaquetas'),
+  ('Bilirubin', 'Bilirrubina'),
+  ('Mean arterial pressure (MAP)', 'Presión arterial media (PAM)'),
+  ('MAP', 'PAM'),
+  ('Dopamine', 'Dopamina'),
+  ('Dobutamine', 'Dobutamina'),
+  ('Dobutamine (any dose)', 'Dobutamina (cualquier dosis)'),
+  ('Epinephrine', 'Adrenalina'),
+  ('Norepinephrine', 'Noradrenalina'),
+  ('Vasopressor doses administered for at least 1 hour', 'Dosis de vasopresores administradas durante al menos 1 hora'),
+  ('Prefilled from the latest nursing evaluation of this encounter', 'Precargado desde la última evaluación de enfermería de esta atención'),
+  ('systems evaluated', 'sistemas evaluados'),
+  ('Low', 'Bajo'),
+  ('Intermediate', 'Intermedio'),
+  ('High', 'Alto'),
+  ('points', 'puntos'),
+  ('System', 'Sistema'),
+  ('Values', 'Valores'),
+  ('Total Score', 'Puntaje total'),
+  ('Respiratory system', 'Sistema respiratorio'),
+  ('Mixed feeding', 'Mixta');
 
-INSERT IGNORE INTO lang_definitions (cons_id, lang_id, definition)
-SELECT c.cons_id, ll.lang_id, t.es
-FROM lang_constants c
-JOIN (
-  SELECT 'Oral' cn, 'Oral' es UNION ALL
-  SELECT 'Enteral', 'Enteral' UNION ALL
-  SELECT 'Parenteral', 'Parenteral' UNION ALL
-  SELECT 'Mixed', 'Mixta' UNION ALL
-  SELECT 'Fasting', 'Ayuno' UNION ALL
-  SELECT 'Nasogastric tube', 'Sonda nasogástrica' UNION ALL
-  SELECT 'Nasojejunal tube', 'Sonda nasoyeyunal' UNION ALL
-  SELECT 'Gastrostomy', 'Gastrostomía' UNION ALL
-  SELECT 'Jejunostomy', 'Yeyunostomía' UNION ALL
-  SELECT 'Continuous', 'Continua' UNION ALL
-  SELECT 'Intermittent', 'Intermitente' UNION ALL
-  SELECT 'Bolus', 'Bolo' UNION ALL
-  SELECT 'Good', 'Buena' UNION ALL
-  SELECT 'Fair', 'Regular' UNION ALL
-  SELECT 'Poor', 'Mala' UNION ALL
-  SELECT 'Vomiting', 'Vómitos' UNION ALL
-  SELECT 'Abdominal distension', 'Distensión abdominal' UNION ALL
-  SELECT 'Diarrhea', 'Diarrea' UNION ALL
-  SELECT 'High gastric residual', 'Residuo gástrico alto' UNION ALL
-  SELECT 'New Nursing Nutrition', 'Nuevo registro de alimentación' UNION ALL
-  SELECT 'Edit Nursing Nutrition', 'Editar registro de alimentación' UNION ALL
-  SELECT 'Nursing Nutrition', 'Alimentación de enfermería' UNION ALL
-  SELECT 'Nutrition Detail', 'Detalle de alimentación' UNION ALL
-  SELECT 'No nutrition records', 'No hay registros de alimentación' UNION ALL
-  SELECT 'Feeding Type', 'Tipo de alimentación' UNION ALL
-  SELECT 'Enteral Route', 'Vía enteral' UNION ALL
-  SELECT 'Modality', 'Modalidad' UNION ALL
-  SELECT 'Formula / Diet', 'Fórmula / Dieta' UNION ALL
-  SELECT 'Volume', 'Volumen' UNION ALL
-  SELECT 'Infusion Rate', 'Velocidad de infusión' UNION ALL
-  SELECT 'Gastric Residual', 'Residuo gástrico' UNION ALL
-  SELECT 'Tolerance', 'Tolerancia' UNION ALL
-  SELECT 'Signs of Intolerance', 'Signos de intolerancia' UNION ALL
-  SELECT 'Record Time', 'Hora de registro' UNION ALL
-  SELECT 'None', 'Ninguno' UNION ALL
-  SELECT 'Value', 'Valor' UNION ALL
-  SELECT 'NURSING NUTRITION RECORD', 'REGISTRO DE ALIMENTACIÓN DE ENFERMERÍA' UNION ALL
-  SELECT 'Acid-base', 'Ácido-base' UNION ALL
-  SELECT 'Acute physiology', 'Fisiología aguda' UNION ALL
-  SELECT 'Acute physiology subtotal', 'Subtotal fisiología aguda' UNION ALL
-  SELECT 'Acute renal failure', 'Insuficiencia renal aguda' UNION ALL
-  SELECT 'Admission type', 'Tipo de ingreso' UNION ALL
-  SELECT 'Age and chronic health', 'Edad y salud crónica' UNION ALL
-  SELECT 'Age points', 'Puntos por edad' UNION ALL
-  SELECT 'APACHE II Detail', 'Detalle APACHE II' UNION ALL
-  SELECT 'APACHE II Score', 'Escala APACHE II' UNION ALL
-  SELECT 'APACHE II SCORE RECORD', 'REGISTRO DE ESCALA APACHE II' UNION ALL
-  SELECT 'Arterial pH', 'pH arterial' UNION ALL
-  SELECT 'Chronic health', 'Salud crónica' UNION ALL
-  SELECT 'Chronic health points', 'Puntos por enfermedad crónica' UNION ALL
-  SELECT 'Creatinine', 'Creatinina' UNION ALL
-  SELECT 'creatinine points doubled', 'puntos de creatinina duplicados' UNION ALL
-  SELECT 'Edit APACHE II Score', 'Editar escala APACHE II' UNION ALL
-  SELECT 'Elective postoperative', 'Postoperatorio electivo' UNION ALL
-  SELECT 'Emergency postoperative', 'Postoperatorio de urgencia' UNION ALL
-  SELECT 'Error: Value out of range', 'Error: Valor fuera de rango' UNION ALL
-  SELECT 'Fraction (0.21-1) or percentage (21-100)', 'Fracción (0,21-1) o porcentaje (21-100)' UNION ALL
-  SELECT 'Heart rate', 'Frecuencia cardíaca' UNION ALL
-  SELECT 'Hematocrit', 'Hematocrito' UNION ALL
-  SELECT 'Higher severity', 'Mayor gravedad' UNION ALL
-  SELECT 'History of severe organ insufficiency or immunocompromise', 'Antecedente de insuficiencia orgánica grave o inmunocompromiso' UNION ALL
-  SELECT 'Laboratory', 'Laboratorio' UNION ALL
-  SELECT 'Lower severity', 'Menor gravedad' UNION ALL
-  SELECT 'Mean arterial pressure', 'Presión arterial media' UNION ALL
-  SELECT 'Moderate severity', 'Gravedad moderada' UNION ALL
-  SELECT 'Neurological', 'Neurológico' UNION ALL
-  SELECT 'New APACHE II Score', 'Nueva escala APACHE II' UNION ALL
-  SELECT 'No', 'No' UNION ALL
-  SELECT 'No APACHE II scores recorded', 'No hay escalas APACHE II registradas' UNION ALL
-  SELECT 'Non-operative', 'No quirúrgico' UNION ALL
-  SELECT 'Not evaluated', 'No evaluado' UNION ALL
-  SELECT 'Only if no arterial blood gas', 'Solo si no hay gasometría arterial' UNION ALL
-  SELECT 'Oxygenation', 'Oxigenación' UNION ALL
-  SELECT 'Points', 'Puntos' UNION ALL
-  SELECT 'Potassium', 'Potasio' UNION ALL
-  SELECT 'Prefilled from the latest nursing evaluation, if any', 'Precargado de la última evaluación de enfermería, si existe' UNION ALL
-  SELECT 'Rectal temperature', 'Temperatura rectal' UNION ALL
-  SELECT 'Reference', 'Referencia' UNION ALL
-  SELECT 'Respiratory rate', 'Frecuencia respiratoria' UNION ALL
-  SELECT 'Serum HCO3', 'HCO3 sérico' UNION ALL
-  SELECT 'Sodium', 'Sodio' UNION ALL
-  SELECT 'Use the worst value of the first 24 hours', 'Utilice el peor valor de las primeras 24 horas' UNION ALL
-  SELECT 'Variable', 'Variable' UNION ALL
-  SELECT 'variables evaluated', 'variables evaluadas' UNION ALL
-  SELECT 'Variables left empty add 0 points and are reported as not evaluated', 'Las variables vacías suman 0 puntos y se informan como no evaluadas' UNION ALL
-  SELECT 'Vital signs', 'Signos vitales' UNION ALL
-  SELECT 'White blood cells', 'Leucocitos' UNION ALL
-  SELECT 'With FiO2 ≥ 0.5 the A-aDO2 gradient is used; otherwise PaO2', 'Con FiO2 ≥ 0,5 se usa el gradiente A-aDO2; de lo contrario, la PaO2' UNION ALL
-  SELECT 'Yes', 'Sí' UNION ALL
-  SELECT 'Oral intake', 'Vía oral' UNION ALL
-  SELECT 'Enteral nutrition', 'Nutrición enteral' UNION ALL
-  SELECT 'Parenteral nutrition', 'Nutrición parenteral' UNION ALL
-  SELECT 'IV fluids', 'Sueros' UNION ALL
-  SELECT 'IV medication', 'Medicación endovenosa' UNION ALL
-  SELECT 'Blood products', 'Hemoderivados' UNION ALL
-  SELECT 'Other intake', 'Otros ingresos' UNION ALL
-  SELECT 'Urine output', 'Diuresis' UNION ALL
-  SELECT 'Drains', 'Drenajes' UNION ALL
-  SELECT 'Stools', 'Deposiciones' UNION ALL
-  SELECT 'Insensible losses', 'Pérdidas insensibles' UNION ALL
-  SELECT 'Other output', 'Otros egresos' UNION ALL
-  SELECT 'Total intake', 'Total de ingresos' UNION ALL
-  SELECT 'Total output', 'Total de egresos' UNION ALL
-  SELECT 'Fluid balance', 'Balance hídrico' UNION ALL
-  SELECT 'Shift', 'Turno' UNION ALL
-  SELECT 'Morning', 'Mañana' UNION ALL
-  SELECT 'Afternoon', 'Tarde' UNION ALL
-  SELECT 'Night', 'Noche' UNION ALL
-  SELECT 'Intake', 'Ingresos' UNION ALL
-  SELECT 'Output', 'Egresos' UNION ALL
-  SELECT 'Edit Nursing Fluid Balance', 'Editar balance hídrico de enfermería' UNION ALL
-  SELECT 'New Nursing Fluid Balance', 'Nuevo balance hídrico de enfermería' UNION ALL
-  SELECT 'Nursing Fluid Balance', 'Balance hídrico de enfermería' UNION ALL
-  SELECT 'Fluid Balance Detail', 'Detalle del balance hídrico' UNION ALL
-  SELECT 'No fluid balance records', 'No hay registros de balance hídrico' UNION ALL
-  SELECT 'No values recorded', 'No se registraron valores' UNION ALL
-  SELECT 'Positive balance', 'Balance positivo' UNION ALL
-  SELECT 'Negative balance', 'Balance negativo' UNION ALL
-  SELECT 'Neutral balance', 'Balance neutro' UNION ALL
-  SELECT 'NURSING FLUID BALANCE RECORD', 'REGISTRO DE BALANCE HÍDRICO DE ENFERMERÍA' UNION ALL
-  SELECT 'Fluid Balance', 'Balance Hídrico' UNION ALL
-  SELECT 'Nutrition', 'Alimentación' UNION ALL
-  SELECT 'Care Plan', 'Plan de Cuidados' UNION ALL
-  SELECT 'Achieved', 'Logrado' UNION ALL
-  SELECT 'Care Plan Detail', 'Detalle del plan de cuidados' UNION ALL
-  SELECT 'Diagnosis code', 'Código de diagnóstico' UNION ALL
-  SELECT 'Diagnosis code (optional)', 'Código de diagnóstico (opcional)' UNION ALL
-  SELECT 'Edit Nursing Care Plan', 'Editar plan de cuidados de enfermería' UNION ALL
-  SELECT 'e.g. NANDA-I or ICNP code', 'p. ej. código NANDA-I o CIPE (ICNP)' UNION ALL
-  SELECT 'Enter at least a nursing diagnosis or a shift progress note.', 'Ingrese al menos un diagnóstico de enfermería o una evolución del turno.' UNION ALL
-  SELECT 'Goal / expected outcome', 'Objetivo / resultado esperado' UNION ALL
-  SELECT 'In progress', 'En curso' UNION ALL
-  SELECT 'New Nursing Care Plan', 'Nuevo plan de cuidados de enfermería' UNION ALL
-  SELECT 'No care plans recorded', 'No hay planes de cuidados registrados' UNION ALL
-  SELECT 'Not achieved', 'No logrado' UNION ALL
-  SELECT 'Nursing Care Plan', 'Plan de cuidados de enfermería' UNION ALL
-  SELECT 'NURSING CARE PLAN RECORD', 'REGISTRO DE PLAN DE CUIDADOS DE ENFERMERÍA' UNION ALL
-  SELECT 'Nursing diagnosis', 'Diagnóstico de enfermería' UNION ALL
-  SELECT 'Nursing interventions', 'Intervenciones de enfermería' UNION ALL
-  SELECT 'Outcome evaluation', 'Evaluación del resultado' UNION ALL
-  SELECT 'Partially achieved', 'Parcialmente logrado' UNION ALL
-  SELECT 'Relevant events of the shift', 'Eventos relevantes del turno' UNION ALL
-  SELECT 'Shift progress note', 'Evolución de enfermería del turno' UNION ALL
-  SELECT 'What care will be/was provided?', '¿Qué cuidados se brindarán/se brindaron?' UNION ALL
-  SELECT 'What do you expect to achieve and by when?', '¿Qué espera lograr y para cuándo?' UNION ALL
-  SELECT 'What problem or risk did you identify?', '¿Qué problema o riesgo identificó?' UNION ALL
-  SELECT 'SOFA Score', 'Escala SOFA' UNION ALL
-  SELECT 'New SOFA Score', 'Nueva escala SOFA' UNION ALL
-  SELECT 'Edit SOFA Score', 'Editar escala SOFA' UNION ALL
-  SELECT 'SOFA Score Detail', 'Detalle de escala SOFA' UNION ALL
-  SELECT 'SOFA SCORE RECORD', 'REGISTRO DE ESCALA SOFA' UNION ALL
-  SELECT 'No SOFA scores recorded', 'No hay escalas SOFA registradas' UNION ALL
-  SELECT 'Sequential Organ Failure Assessment', 'Evaluación Secuencial de Falla Orgánica' UNION ALL
-  SELECT 'Respiratory', 'Respiratorio' UNION ALL
-  SELECT 'Coagulation', 'Coagulación' UNION ALL
-  SELECT 'Liver', 'Hepático' UNION ALL
-  SELECT 'Cardiovascular', 'Cardiovascular' UNION ALL
-  SELECT 'Central nervous system', 'Sistema nervioso central' UNION ALL
-  SELECT 'Renal', 'Renal' UNION ALL
-  SELECT 'PaO2/FiO2 ratio', 'Relación PaO2/FiO2' UNION ALL
-  SELECT 'Fraction 0.21-1.0 or percentage 21-100', 'Fracción 0,21-1,0 o porcentaje 21-100' UNION ALL
-  SELECT 'Mechanical ventilation / respiratory support', 'Ventilación mecánica / soporte respiratorio' UNION ALL
-  SELECT 'Scores 3 and 4 require respiratory support', 'Los puntajes 3 y 4 requieren soporte respiratorio' UNION ALL
-  SELECT 'Platelets', 'Plaquetas' UNION ALL
-  SELECT 'Bilirubin', 'Bilirrubina' UNION ALL
-  SELECT 'Mean arterial pressure (MAP)', 'Presión arterial media (PAM)' UNION ALL
-  SELECT 'MAP', 'PAM' UNION ALL
-  SELECT 'Dopamine', 'Dopamina' UNION ALL
-  SELECT 'Dobutamine', 'Dobutamina' UNION ALL
-  SELECT 'Dobutamine (any dose)', 'Dobutamina (cualquier dosis)' UNION ALL
-  SELECT 'Epinephrine', 'Adrenalina' UNION ALL
-  SELECT 'Norepinephrine', 'Noradrenalina' UNION ALL
-  SELECT 'Vasopressor doses administered for at least 1 hour', 'Dosis de vasopresores administradas durante al menos 1 hora' UNION ALL
-  SELECT 'Prefilled from the latest nursing evaluation of this encounter', 'Precargado desde la última evaluación de enfermería de esta atención' UNION ALL
-  SELECT 'systems evaluated', 'sistemas evaluados' UNION ALL
-  SELECT 'Low', 'Bajo' UNION ALL
-  SELECT 'Intermediate', 'Intermedio' UNION ALL
-  SELECT 'High', 'Alto' UNION ALL
-  SELECT 'points', 'puntos' UNION ALL
-  SELECT 'System', 'Sistema' UNION ALL
-  SELECT 'Values', 'Valores' UNION ALL
-  SELECT 'Total Score', 'Puntaje total'
-) t ON c.constant_name = t.cn
-JOIN lang_languages ll ON ll.lang_id IN (3, 4);
-#EndIf
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_uti_lang t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT (SELECT MIN(c.cons_id) FROM lang_constants c WHERE c.constant_name = t.cn), ll.lang_id, t.es
+FROM nursing_uti_lang t
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (
+  SELECT 1 FROM lang_definitions d
+  JOIN lang_constants c2 ON c2.cons_id = d.cons_id
+  WHERE c2.constant_name = t.cn AND d.lang_id = ll.lang_id
+);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;

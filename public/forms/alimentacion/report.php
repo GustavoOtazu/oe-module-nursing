@@ -39,7 +39,7 @@ function alimentacion_report(int $pid, int $encounter, int $cols, int $id): void
         'ORAL'       => xlt('Oral'),
         'ENTERAL'    => xlt('Enteral'),
         'PARENTERAL' => xlt('Parenteral'),
-        'MIXTA'      => xlt('Mixed'),
+        'MIXTA'      => xlt('Mixed feeding'),
         'AYUNO'      => xlt('Fasting'),
     ];
     $via_labels = [

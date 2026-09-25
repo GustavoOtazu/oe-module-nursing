@@ -46,7 +46,7 @@ function escala_sofa_report(int $pid, int $encounter, int $cols, int $id): void
     $points = static fn(mixed $value): ?int => ($value === null || $value === '') ? null : (int) $value;
 
     $systems = [
-        [xl('Respiratory'), $join([
+        [xl('Respiratory system'), $join([
             $with('PaO2', $result['pao2'] ?? null, 'mmHg'),
             $with('FiO2', $result['fio2'] ?? null),
             ((int)($result['soporte_respiratorio'] ?? 0) === 1) ? xl('Mechanical ventilation / respiratory support') : '',

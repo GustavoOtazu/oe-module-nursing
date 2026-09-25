@@ -89,10 +89,10 @@ $nursing_forms = [
     'evaluaciones' => xlt('Nursing Evaluation'),
     'registro_vm' => xlt('Ventilation Record'),
     'balance_hidrico' => xlt('Fluid Balance'),
-    'alimentacion' => xlt('Nutrition'),
+    'alimentacion' => xlt('Nursing Nutrition'),
     'escala_sofa' => xlt('SOFA Score'),
     'escala_apache' => xlt('APACHE II Score'),
-    'plan_cuidados' => xlt('Care Plan'),
+    'plan_cuidados' => xlt('Nursing Care Plan'),
 ];
 ?>
 
@@ -479,7 +479,7 @@ $nursing_forms = [
                                     <div class="enf-icon enf-icon--brown">
                                         <i class="fa fa-utensils fa-2x"></i>
                                     </div>
-                                    <div class="enf-label"><?php echo xlt('Nutrition'); ?></div>
+                                    <div class="enf-label"><?php echo xlt('Nursing Nutrition'); ?></div>
                                 </button>
                             </div>
                             <!-- SOFA Score -->
@@ -506,7 +506,7 @@ $nursing_forms = [
                                     <div class="enf-icon enf-icon--pink">
                                         <i class="fa fa-clipboard-list fa-2x"></i>
                                     </div>
-                                    <div class="enf-label"><?php echo xlt('Care Plan'); ?></div>
+                                    <div class="enf-label"><?php echo xlt('Nursing Care Plan'); ?></div>
                                 </button>
                             </div>
                         </div>

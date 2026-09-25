@@ -54,7 +54,7 @@ $tipo_labels = [
     'ORAL'       => xlt('Oral'),
     'ENTERAL'    => xlt('Enteral'),
     'PARENTERAL' => xlt('Parenteral'),
-    'MIXTA'      => xlt('Mixed'),
+    'MIXTA'      => xlt('Mixed feeding'),
     'AYUNO'      => xlt('Fasting'),
 ];
 $via_labels = [

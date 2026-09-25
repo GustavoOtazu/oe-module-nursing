@@ -195,7 +195,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         <!-- RESPIRATORY -->
         <div class="form-section">
             <div class="section-title mb-2">
-                <h6 class="font-weight-bold mb-0"><?php echo xlt('Respiratory'); ?></h6>
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Respiratory system'); ?></h6>
                 <span class="sub-badge" id="sub_resp"></span>
             </div>
             <div class="form-row">
