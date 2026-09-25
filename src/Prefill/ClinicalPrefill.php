@@ -78,7 +78,7 @@ final class ClinicalPrefill
             foreach ($rows as $r) {
                 $fio2 = SofaScore::normalizeFio2(Num::parse($r['fio2'] ?? null));
                 $pao2 = Num::parse($r['pao2'] ?? null);
-                if ($fio2 === null || $pao2 === null) {
+                if ($fio2 === null || $pao2 === null || $pao2 <= 0) {
                     continue;
                 }
                 $gases[] = ['fio2' => $fio2, 'pao2' => $pao2, 'paco2' => Num::parse($r['paco2'] ?? null), 'time' => (string) $r['date'], 'source' => $source];
@@ -363,7 +363,9 @@ final class ClinicalPrefill
         $out = [];
         foreach ($rows as $r) {
             $value = Num::parse($r[$field] ?? null);
-            if ($value === null) {
+            // None of these variables can be zero or negative: a zero is an empty
+            // field (OpenEMR also stores 0 by default in its vitals form).
+            if ($value === null || $value <= 0) {
                 continue;
             }
             $out[] = ['value' => $value, 'time' => (string) ($r['date'] ?? ''), 'source' => $source];
