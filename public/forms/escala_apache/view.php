@@ -236,8 +236,10 @@ $buildRows = static function (array $row, array $calc) use ($num, $withUnit): ar
                 <small class="text-muted ml-2"><?php echo xlt('User'); ?>: <?php echo text((string)($row['user'] ?? '')); ?></small>
             </div>
             <div>
+                <?php if (!\OpenEMR\Modules\Nursing\FormLock::isLocked('escala_apache', (int)($row['id'] ?? 0), $encounter)) : ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/escala_apache/new.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . $row_id); ?>"
                    class="btn btn-primary mr-1" onclick="top.restoreSession()"><i class="fas fa-pen mr-1"></i><?php echo xlt('Edit'); ?></a>
+                <?php endif; ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/escala_apache/print.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . $row_id); ?>"
                    target="_blank" class="btn btn-success" onclick="top.restoreSession()"><i class="fas fa-print mr-1"></i><?php echo xlt('Print'); ?></a>
             </div>

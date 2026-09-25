@@ -160,8 +160,10 @@ $form_url = OEGlobalsBag::getInstance()->getString('webroot')
                 <small class="text-muted ml-2"><?php echo xlt('User'); ?>: <?php echo text((string)($row['user'] ?? '')); ?></small>
             </div>
             <div>
+                <?php if (!\OpenEMR\Modules\Nursing\FormLock::isLocked('plan_cuidados', (int)($row['id'] ?? 0), $encounter)) : ?>
                 <a href="<?php echo attr($form_url . 'new.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . $row_id); ?>"
                    class="btn btn-primary mr-1" onclick="top.restoreSession()"><i class="fas fa-pen mr-1"></i><?php echo xlt('Edit'); ?></a>
+                <?php endif; ?>
                 <a href="<?php echo attr($form_url . 'print.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . $row_id); ?>"
                    target="_blank" class="btn btn-success" onclick="top.restoreSession()"><i class="fas fa-print mr-1"></i><?php echo xlt('Print'); ?></a>
             </div>

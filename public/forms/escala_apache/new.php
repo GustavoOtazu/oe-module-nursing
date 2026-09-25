@@ -43,6 +43,12 @@ if (!AclMain::aclCheckCore('encounters', 'notes')) {
 
 $is_edit = ($id > 0);
 
+// A signed record can no longer be edited: show the read-only view instead.
+if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('escala_apache', $id, $encounter)) {
+    require __DIR__ . '/view.php';
+    return;
+}
+
 // Drops the trailing zeros MySQL adds to DECIMAL columns ("37.0" -> "37").
 $num = static function (mixed $value): string {
     if ($value === null || $value === '') {

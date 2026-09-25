@@ -1065,7 +1065,8 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Review before saving', 'Revisar antes de guardar'),
   ('Print', 'Imprimir'),
   ('Print this form as PDF', 'Imprimir este formulario en PDF'),
-  ('View signed record', 'Ver registro firmado');
+  ('View signed record', 'Ver registro firmado'),
+  ('This record is signed and can no longer be edited.', 'Este registro está firmado y ya no se puede modificar.');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_uti_lang t

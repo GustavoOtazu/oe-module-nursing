@@ -42,6 +42,12 @@ if (!AclMain::aclCheckCore('encounters', 'notes')) {
 
 $is_edit = ($id > 0);
 
+// A signed record can no longer be edited: show the read-only view instead.
+if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('escala_sofa', $id, $encounter)) {
+    require __DIR__ . '/view.php';
+    return;
+}
+
 // Numeric fields are kept as strings so an empty value stays empty in the input.
 $pao2                 = '';
 $fio2                 = '';

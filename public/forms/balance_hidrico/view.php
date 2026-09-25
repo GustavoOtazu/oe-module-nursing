@@ -195,8 +195,10 @@ $fmtMl = static function (mixed $value): string {
                 <small class="text-muted ml-2"><?php echo xlt('User'); ?>: <?php echo text((string)($row['user'] ?? '')); ?></small>
             </div>
             <div>
+                <?php if (!\OpenEMR\Modules\Nursing\FormLock::isLocked('balance_hidrico', (int)($row['id'] ?? 0), $encounter)) : ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/balance_hidrico/new.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . (int)($row['id'] ?? 0)); ?>"
                    class="btn btn-primary mr-1" onclick="top.restoreSession()"><i class="fas fa-pen mr-1"></i><?php echo xlt('Edit'); ?></a>
+                <?php endif; ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/balance_hidrico/print.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . (int)($row['id'] ?? 0)); ?>"
                    target="_blank" class="btn btn-success" onclick="top.restoreSession()"><i class="fas fa-print mr-1"></i><?php echo xlt('Print'); ?></a>
             </div>

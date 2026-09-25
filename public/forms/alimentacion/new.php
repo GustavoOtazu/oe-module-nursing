@@ -40,6 +40,12 @@ if (!AclMain::aclCheckCore('encounters', 'notes')) {
 
 $is_edit = ($id > 0);
 
+// A signed record can no longer be edited: show the read-only view instead.
+if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('alimentacion', $id, $encounter)) {
+    require __DIR__ . '/view.php';
+    return;
+}
+
 // Stored decimals come back as "250.00"; show them without trailing zeros.
 $fmtNum = static function (mixed $value): string {
     if ($value === null || $value === '') {

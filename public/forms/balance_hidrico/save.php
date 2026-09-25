@@ -79,6 +79,11 @@ $total_params  = [$totals['total_ingresos'], $totals['total_egresos'], $totals['
 
 $is_edit = ($id > 0);
 
+// A signed record can no longer be edited, whatever the client sends.
+if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('balance_hidrico', $id, $encounter)) {
+    die(xlt('This record is signed and can no longer be edited.'));
+}
+
 if ($is_edit) {
     $check = QueryUtils::querySingleRow("SELECT id FROM form_balance_hidrico WHERE id = ? AND pid = ? AND encounter = ? LIMIT 1", [$id, $pid, $encounter]);
     if (!$check) {
