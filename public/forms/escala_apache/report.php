@@ -19,6 +19,9 @@ use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 
 function escala_apache_report(int $pid, int $encounter, int $cols, int $id): void
 {
+    // Adds "Print" next to "Delete" in the encounter form list (see EncounterFormButtons).
+    \OpenEMR\Modules\Nursing\EncounterFormButtons::render('escala_apache', 'APACHE II Score', (int) $pid, (int) $encounter, (int) $id);
+
     if (!AclMain::aclCheckCore('encounters', 'notes')) {
         echo "<p>" . xlt("Access denied") . "</p>";
         return;

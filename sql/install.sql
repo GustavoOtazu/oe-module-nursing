@@ -1062,7 +1062,10 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('in the last 24 h', 'en las últimas 24 h'),
   ('since the previous fluid balance', 'desde el balance hídrico anterior'),
   ('Sum of %d nutrition records', 'Suma de %d registros de alimentación'),
-  ('Review before saving', 'Revisar antes de guardar');
+  ('Review before saving', 'Revisar antes de guardar'),
+  ('Print', 'Imprimir'),
+  ('Print this form as PDF', 'Imprimir este formulario en PDF'),
+  ('View signed record', 'Ver registro firmado');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_uti_lang t
