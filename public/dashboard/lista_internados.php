@@ -88,6 +88,11 @@ $nursing_forms = [
     'cuidados'    => xlt('Nursing Care Bundle'),
     'evaluaciones' => xlt('Nursing Evaluation'),
     'registro_vm' => xlt('Ventilation Record'),
+    'balance_hidrico' => xlt('Fluid Balance'),
+    'alimentacion' => xlt('Nursing Nutrition'),
+    'escala_sofa' => xlt('SOFA Score'),
+    'escala_apache' => xlt('APACHE II Score'),
+    'plan_cuidados' => xlt('Nursing Care Plan'),
 ];
 ?>
 
@@ -181,6 +186,11 @@ $nursing_forms = [
         .enf-icon--orange { background: #FB8C00; }
         .enf-icon--purple { background: #8E24AA; }
         .enf-icon--gray   { background: #9e9e9e; }
+        .enf-icon--teal   { background: #00897B; }
+        .enf-icon--brown  { background: #6D4C41; }
+        .enf-icon--indigo { background: #3949AB; }
+        .enf-icon--pink   { background: #D81B60; }
+        .enf-icon--cyan   { background: #00ACC1; }
 
         .btn-enf-card .enf-label {
             font-size: 12px;
@@ -454,13 +464,49 @@ $nursing_forms = [
                                     <div class="enf-label"><?php echo xlt('Ventilation Record'); ?></div>
                                 </button>
                             </div>
-                            <!-- Próximamente -->
+                            <!-- Fluid Balance -->
                             <div class="col-md-4 col-sm-6 enf-col">
-                                <button class="btn-enf-card btn-enf-disabled" type="button" disabled>
-                                    <div class="enf-icon enf-icon--gray">
-                                        <i class="fa fa-plus fa-2x"></i>
+                                <button class="btn-enf-card btn-enfRedired" type="button" data-form="balance_hidrico">
+                                    <div class="enf-icon enf-icon--cyan">
+                                        <i class="fa fa-balance-scale fa-2x"></i>
                                     </div>
-                                    <div class="enf-label"><?php echo xlt('Coming Soon'); ?></div>
+                                    <div class="enf-label"><?php echo xlt('Fluid Balance'); ?></div>
+                                </button>
+                            </div>
+                            <!-- Nutrition -->
+                            <div class="col-md-4 col-sm-6 enf-col">
+                                <button class="btn-enf-card btn-enfRedired" type="button" data-form="alimentacion">
+                                    <div class="enf-icon enf-icon--brown">
+                                        <i class="fa fa-utensils fa-2x"></i>
+                                    </div>
+                                    <div class="enf-label"><?php echo xlt('Nursing Nutrition'); ?></div>
+                                </button>
+                            </div>
+                            <!-- SOFA Score -->
+                            <div class="col-md-4 col-sm-6 enf-col">
+                                <button class="btn-enf-card btn-enfRedired" type="button" data-form="escala_sofa">
+                                    <div class="enf-icon enf-icon--indigo">
+                                        <i class="fa fa-procedures fa-2x"></i>
+                                    </div>
+                                    <div class="enf-label"><?php echo xlt('SOFA Score'); ?></div>
+                                </button>
+                            </div>
+                            <!-- APACHE II Score -->
+                            <div class="col-md-4 col-sm-6 enf-col">
+                                <button class="btn-enf-card btn-enfRedired" type="button" data-form="escala_apache">
+                                    <div class="enf-icon enf-icon--teal">
+                                        <i class="fa fa-calculator fa-2x"></i>
+                                    </div>
+                                    <div class="enf-label"><?php echo xlt('APACHE II Score'); ?></div>
+                                </button>
+                            </div>
+                            <!-- Care Plan -->
+                            <div class="col-md-4 col-sm-6 enf-col">
+                                <button class="btn-enf-card btn-enfRedired" type="button" data-form="plan_cuidados">
+                                    <div class="enf-icon enf-icon--pink">
+                                        <i class="fa fa-clipboard-list fa-2x"></i>
+                                    </div>
+                                    <div class="enf-label"><?php echo xlt('Nursing Care Plan'); ?></div>
                                 </button>
                             </div>
                         </div>

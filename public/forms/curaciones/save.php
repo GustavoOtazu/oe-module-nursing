@@ -59,6 +59,11 @@ $obs_via_venosa         = (string) filter_input(INPUT_POST, 'obs_via_venosa');
 $hora_raw               = (string) filter_input(INPUT_POST, 'hora_operacion');
 $hora_operacion         = ($hora_raw !== '') ? $hora_raw : null;
 $is_edit = ($id > 0);
+
+// A signed record can no longer be edited, whatever the client sends.
+if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('curaciones', $id, $encounter)) {
+    die(xlt('This record is signed and can no longer be edited.'));
+}
 if ($is_edit) {
 // Verify the record belongs to this patient/encounter
     $check = QueryUtils::querySingleRow("SELECT id FROM form_curaciones WHERE id = ? AND pid = ? AND encounter = ? LIMIT 1", [$id, $pid, $encounter]);

@@ -670,3 +670,416 @@ ALTER TABLE `form_encounter` ADD COLUMN `cuarto` VARCHAR(55) DEFAULT NULL;
 #IfMissingColumn form_encounter nro_registro
 ALTER TABLE `form_encounter` ADD COLUMN `nro_registro` VARCHAR(40) DEFAULT NULL;
 #EndIf
+
+-- -------------------------------------------------------------------------
+-- UTI extension: fluid balance, nutrition, SOFA, APACHE II and care plan.
+-- Scores and totals are computed server-side by src/Scoring/*.
+-- -------------------------------------------------------------------------
+
+#IfNotTable form_balance_hidrico
+CREATE TABLE `form_balance_hidrico` (
+  `id`                      bigint(20)    NOT NULL AUTO_INCREMENT,
+  `date`                    datetime      DEFAULT NULL,
+  `pid`                     bigint(20)    DEFAULT NULL,
+  `encounter`               int(11)       NOT NULL,
+  `user`                    varchar(255)  DEFAULT NULL,
+  `groupname`               varchar(255)  DEFAULT NULL,
+  `authorized`              tinyint(4)    DEFAULT NULL,
+  `activity`                tinyint(4)    DEFAULT NULL,
+  `turno`                   varchar(10)   DEFAULT NULL,
+  `hora_registro`           time          DEFAULT NULL,
+  `ing_via_oral`            decimal(8,2)  DEFAULT NULL,
+  `ing_enteral`             decimal(8,2)  DEFAULT NULL,
+  `ing_parenteral`          decimal(8,2)  DEFAULT NULL,
+  `ing_sueros`              decimal(8,2)  DEFAULT NULL,
+  `ing_medicacion`          decimal(8,2)  DEFAULT NULL,
+  `ing_hemoderivados`       decimal(8,2)  DEFAULT NULL,
+  `ing_otros`               decimal(8,2)  DEFAULT NULL,
+  `eg_diuresis`             decimal(8,2)  DEFAULT NULL,
+  `eg_drenajes`             decimal(8,2)  DEFAULT NULL,
+  `eg_sng`                  decimal(8,2)  DEFAULT NULL,
+  `eg_vomitos`              decimal(8,2)  DEFAULT NULL,
+  `eg_deposiciones`         decimal(8,2)  DEFAULT NULL,
+  `eg_perdidas_insensibles` decimal(8,2)  DEFAULT NULL,
+  `eg_otros`                decimal(8,2)  DEFAULT NULL,
+  `total_ingresos`          decimal(9,2)  DEFAULT NULL,
+  `total_egresos`           decimal(9,2)  DEFAULT NULL,
+  `balance`                 decimal(9,2)  DEFAULT NULL,
+  `observaciones`           text,
+  PRIMARY KEY (`id`),
+  KEY `pid_encounter` (`pid`, `encounter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#EndIf
+
+#IfNotTable form_alimentacion
+CREATE TABLE `form_alimentacion` (
+  `id`                   bigint(20)    NOT NULL AUTO_INCREMENT,
+  `date`                 datetime      DEFAULT NULL,
+  `pid`                  bigint(20)    DEFAULT NULL,
+  `encounter`            int(11)       NOT NULL,
+  `user`                 varchar(255)  DEFAULT NULL,
+  `groupname`            varchar(255)  DEFAULT NULL,
+  `authorized`           tinyint(4)    DEFAULT NULL,
+  `activity`             tinyint(4)    DEFAULT NULL,
+  `hora_registro`        time          DEFAULT NULL,
+  `tipo_alimentacion`    varchar(20)   DEFAULT NULL,
+  `via_enteral`          varchar(20)   DEFAULT NULL,
+  `modalidad`            varchar(20)   DEFAULT NULL,
+  `formula`              varchar(255)  DEFAULT NULL,
+  `volumen_ml`           decimal(8,2)  DEFAULT NULL,
+  `velocidad_ml_h`       decimal(8,2)  DEFAULT NULL,
+  `residuo_gastrico_ml`  decimal(8,2)  DEFAULT NULL,
+  `tolerancia`           varchar(20)   DEFAULT NULL,
+  `signos_intolerancia`  varchar(255)  DEFAULT NULL,
+  `observaciones`        text,
+  PRIMARY KEY (`id`),
+  KEY `pid_encounter` (`pid`, `encounter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#EndIf
+
+#IfNotTable form_escala_sofa
+CREATE TABLE `form_escala_sofa` (
+  `id`                    bigint(20)    NOT NULL AUTO_INCREMENT,
+  `date`                  datetime      DEFAULT NULL,
+  `pid`                   bigint(20)    DEFAULT NULL,
+  `encounter`             int(11)       NOT NULL,
+  `user`                  varchar(255)  DEFAULT NULL,
+  `groupname`             varchar(255)  DEFAULT NULL,
+  `authorized`            tinyint(4)    DEFAULT NULL,
+  `activity`              tinyint(4)    DEFAULT NULL,
+  `hora_registro`         time          DEFAULT NULL,
+  `pao2`                  decimal(6,1)  DEFAULT NULL,
+  `fio2`                  decimal(5,2)  DEFAULT NULL,
+  `soporte_respiratorio`  tinyint(1)    DEFAULT 0,
+  `plaquetas`             decimal(7,1)  DEFAULT NULL,
+  `bilirrubina`           decimal(5,2)  DEFAULT NULL,
+  `pam`                   decimal(5,1)  DEFAULT NULL,
+  `dopamina`              decimal(6,2)  DEFAULT NULL,
+  `dobutamina`            tinyint(1)    DEFAULT 0,
+  `epinefrina`            decimal(6,3)  DEFAULT NULL,
+  `norepinefrina`         decimal(6,3)  DEFAULT NULL,
+  `glasgow`               tinyint(4)    DEFAULT NULL,
+  `creatinina`            decimal(5,2)  DEFAULT NULL,
+  `diuresis_24h`          decimal(7,1)  DEFAULT NULL,
+  `pafi`                  decimal(6,1)  DEFAULT NULL,
+  `sofa_resp`             tinyint(4)    DEFAULT NULL,
+  `sofa_coag`             tinyint(4)    DEFAULT NULL,
+  `sofa_hepatico`         tinyint(4)    DEFAULT NULL,
+  `sofa_cardio`           tinyint(4)    DEFAULT NULL,
+  `sofa_snc`              tinyint(4)    DEFAULT NULL,
+  `sofa_renal`            tinyint(4)    DEFAULT NULL,
+  `sofa_total`            tinyint(4)    DEFAULT NULL,
+  `sofa_evaluados`        tinyint(4)    DEFAULT NULL,
+  `observaciones`         text,
+  PRIMARY KEY (`id`),
+  KEY `pid_encounter` (`pid`, `encounter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#EndIf
+
+#IfNotTable form_escala_apache
+CREATE TABLE `form_escala_apache` (
+  `id`                         bigint(20)    NOT NULL AUTO_INCREMENT,
+  `date`                       datetime      DEFAULT NULL,
+  `pid`                        bigint(20)    DEFAULT NULL,
+  `encounter`                  int(11)       NOT NULL,
+  `user`                       varchar(255)  DEFAULT NULL,
+  `groupname`                  varchar(255)  DEFAULT NULL,
+  `authorized`                 tinyint(4)    DEFAULT NULL,
+  `activity`                   tinyint(4)    DEFAULT NULL,
+  `hora_registro`              time          DEFAULT NULL,
+  `temperatura`                decimal(4,1)  DEFAULT NULL,
+  `pam`                        decimal(5,1)  DEFAULT NULL,
+  `frecuencia_cardiaca`        smallint(6)   DEFAULT NULL,
+  `frecuencia_respiratoria`    smallint(6)   DEFAULT NULL,
+  `fio2`                       decimal(5,2)  DEFAULT NULL,
+  `pao2`                       decimal(6,1)  DEFAULT NULL,
+  `paco2`                      decimal(6,1)  DEFAULT NULL,
+  `ph`                         decimal(4,2)  DEFAULT NULL,
+  `bicarbonato`                decimal(5,1)  DEFAULT NULL,
+  `sodio`                      decimal(5,1)  DEFAULT NULL,
+  `potasio`                    decimal(4,1)  DEFAULT NULL,
+  `creatinina`                 decimal(5,2)  DEFAULT NULL,
+  `insuficiencia_renal_aguda`  tinyint(1)    DEFAULT 0,
+  `hematocrito`                decimal(4,1)  DEFAULT NULL,
+  `leucocitos`                 decimal(6,1)  DEFAULT NULL,
+  `glasgow`                    tinyint(4)    DEFAULT NULL,
+  `edad`                       smallint(6)   DEFAULT NULL,
+  `enfermedad_cronica`         tinyint(1)    DEFAULT 0,
+  `tipo_ingreso`               varchar(20)   DEFAULT NULL,
+  `a_ado2`                     decimal(6,1)  DEFAULT NULL,
+  `pts_fisiologicos`           tinyint(4)    DEFAULT NULL,
+  `pts_edad`                   tinyint(4)    DEFAULT NULL,
+  `pts_cronicos`               tinyint(4)    DEFAULT NULL,
+  `apache_total`               tinyint(4)    DEFAULT NULL,
+  `apache_evaluados`           tinyint(4)    DEFAULT NULL,
+  `observaciones`              text,
+  PRIMARY KEY (`id`),
+  KEY `pid_encounter` (`pid`, `encounter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#EndIf
+
+#IfNotTable form_plan_cuidados
+CREATE TABLE `form_plan_cuidados` (
+  `id`                     bigint(20)    NOT NULL AUTO_INCREMENT,
+  `date`                   datetime      DEFAULT NULL,
+  `pid`                    bigint(20)    DEFAULT NULL,
+  `encounter`              int(11)       NOT NULL,
+  `user`                   varchar(255)  DEFAULT NULL,
+  `groupname`              varchar(255)  DEFAULT NULL,
+  `authorized`             tinyint(4)    DEFAULT NULL,
+  `activity`               tinyint(4)    DEFAULT NULL,
+  `turno`                  varchar(10)   DEFAULT NULL,
+  `hora_registro`          time          DEFAULT NULL,
+  `diagnostico_enfermeria` text,
+  `codigo_diagnostico`     varchar(40)   DEFAULT NULL,
+  `objetivo`               text,
+  `intervenciones`         text,
+  `evaluacion_resultado`   varchar(20)   DEFAULT NULL,
+  `evolucion`              text,
+  `observaciones`          text,
+  PRIMARY KEY (`id`),
+  KEY `pid_encounter` (`pid`, `encounter`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+#EndIf
+
+-- Register the new nursing forms
+#IfNotRow registry directory balance_hidrico
+INSERT INTO registry (name, state, directory, sql_run, unpackaged, date, priority, category, patient_encounter, aco_spec)
+VALUES ('Nursing Fluid Balance', 1, 'balance_hidrico', 1, 1, NOW(), 0, 'Nursing', 1, 'encounters|notes');
+#EndIf
+#IfNotRow registry directory alimentacion
+INSERT INTO registry (name, state, directory, sql_run, unpackaged, date, priority, category, patient_encounter, aco_spec)
+VALUES ('Nursing Nutrition', 1, 'alimentacion', 1, 1, NOW(), 0, 'Nursing', 1, 'encounters|notes');
+#EndIf
+#IfNotRow registry directory escala_sofa
+INSERT INTO registry (name, state, directory, sql_run, unpackaged, date, priority, category, patient_encounter, aco_spec)
+VALUES ('SOFA Score', 1, 'escala_sofa', 1, 1, NOW(), 0, 'Nursing', 1, 'encounters|notes');
+#EndIf
+#IfNotRow registry directory escala_apache
+INSERT INTO registry (name, state, directory, sql_run, unpackaged, date, priority, category, patient_encounter, aco_spec)
+VALUES ('APACHE II Score', 1, 'escala_apache', 1, 1, NOW(), 0, 'Nursing', 1, 'encounters|notes');
+#EndIf
+#IfNotRow registry directory plan_cuidados
+INSERT INTO registry (name, state, directory, sql_run, unpackaged, date, priority, category, patient_encounter, aco_spec)
+VALUES ('Nursing Care Plan', 1, 'plan_cuidados', 1, 1, NOW(), 0, 'Nursing', 1, 'encounters|notes');
+#EndIf
+
+-- Spanish translations for the UTI extension forms.
+-- lang_constants and lang_definitions have no unique keys, so INSERT IGNORE
+-- would duplicate existing rows. Instead, a constant is added only when no
+-- constant with that name exists, and a definition only when that text has no
+-- definition yet for the language. Existing (core) translations are never
+-- changed, and the block is safe to run on every upgrade.
+DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;
+CREATE TEMPORARY TABLE nursing_uti_lang (cn VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_uti_lang (cn, es) VALUES
+  ('Oral', 'Oral'),
+  ('Enteral', 'Enteral'),
+  ('Parenteral', 'Parenteral'),
+  ('Fasting', 'Ayuno'),
+  ('Nasogastric tube', 'Sonda nasogástrica'),
+  ('Nasojejunal tube', 'Sonda nasoyeyunal'),
+  ('Gastrostomy', 'Gastrostomía'),
+  ('Jejunostomy', 'Yeyunostomía'),
+  ('Continuous', 'Continua'),
+  ('Intermittent', 'Intermitente'),
+  ('Bolus', 'Bolo'),
+  ('Good', 'Buena'),
+  ('Fair', 'Regular'),
+  ('Poor', 'Mala'),
+  ('Vomiting', 'Vómitos'),
+  ('Abdominal distension', 'Distensión abdominal'),
+  ('Diarrhea', 'Diarrea'),
+  ('High gastric residual', 'Residuo gástrico alto'),
+  ('New Nursing Nutrition', 'Nuevo registro de alimentación'),
+  ('Edit Nursing Nutrition', 'Editar registro de alimentación'),
+  ('Nursing Nutrition', 'Alimentación de enfermería'),
+  ('Nutrition Detail', 'Detalle de alimentación'),
+  ('No nutrition records', 'No hay registros de alimentación'),
+  ('Feeding Type', 'Tipo de alimentación'),
+  ('Enteral Route', 'Vía enteral'),
+  ('Modality', 'Modalidad'),
+  ('Formula / Diet', 'Fórmula / Dieta'),
+  ('Volume', 'Volumen'),
+  ('Infusion Rate', 'Velocidad de infusión'),
+  ('Gastric Residual', 'Residuo gástrico'),
+  ('Tolerance', 'Tolerancia'),
+  ('Signs of Intolerance', 'Signos de intolerancia'),
+  ('Record Time', 'Hora de registro'),
+  ('None', 'Ninguno'),
+  ('Value', 'Valor'),
+  ('NURSING NUTRITION RECORD', 'REGISTRO DE ALIMENTACIÓN DE ENFERMERÍA'),
+  ('Acid-base', 'Ácido-base'),
+  ('Acute physiology', 'Fisiología aguda'),
+  ('Acute physiology subtotal', 'Subtotal fisiología aguda'),
+  ('Acute renal failure', 'Insuficiencia renal aguda'),
+  ('Admission type', 'Tipo de ingreso'),
+  ('Age and chronic health', 'Edad y salud crónica'),
+  ('Age points', 'Puntos por edad'),
+  ('APACHE II Detail', 'Detalle APACHE II'),
+  ('APACHE II Score', 'Escala APACHE II'),
+  ('APACHE II SCORE RECORD', 'REGISTRO DE ESCALA APACHE II'),
+  ('Arterial pH', 'pH arterial'),
+  ('Chronic health', 'Salud crónica'),
+  ('Chronic health points', 'Puntos por enfermedad crónica'),
+  ('Creatinine', 'Creatinina'),
+  ('creatinine points doubled', 'puntos de creatinina duplicados'),
+  ('Edit APACHE II Score', 'Editar escala APACHE II'),
+  ('Elective postoperative', 'Postoperatorio electivo'),
+  ('Emergency postoperative', 'Postoperatorio de urgencia'),
+  ('Error: Value out of range', 'Error: Valor fuera de rango'),
+  ('Fraction (0.21-1) or percentage (21-100)', 'Fracción (0,21-1) o porcentaje (21-100)'),
+  ('Heart rate', 'Frecuencia cardíaca'),
+  ('Hematocrit', 'Hematocrito'),
+  ('Higher severity', 'Mayor gravedad'),
+  ('History of severe organ insufficiency or immunocompromise', 'Antecedente de insuficiencia orgánica grave o inmunocompromiso'),
+  ('Laboratory', 'Laboratorio'),
+  ('Lower severity', 'Menor gravedad'),
+  ('Mean arterial pressure', 'Presión arterial media'),
+  ('Moderate severity', 'Gravedad moderada'),
+  ('Neurological', 'Neurológico'),
+  ('New APACHE II Score', 'Nueva escala APACHE II'),
+  ('No', 'No'),
+  ('No APACHE II scores recorded', 'No hay escalas APACHE II registradas'),
+  ('Non-operative', 'No quirúrgico'),
+  ('Not evaluated', 'No evaluado'),
+  ('Only if no arterial blood gas', 'Solo si no hay gasometría arterial'),
+  ('Oxygenation', 'Oxigenación'),
+  ('Points', 'Puntos'),
+  ('Potassium', 'Potasio'),
+  ('Rectal temperature', 'Temperatura rectal'),
+  ('Reference', 'Referencia'),
+  ('Respiratory rate', 'Frecuencia respiratoria'),
+  ('Serum HCO3', 'HCO3 sérico'),
+  ('Sodium', 'Sodio'),
+  ('Use the worst value of the first 24 hours', 'Utilice el peor valor de las primeras 24 horas'),
+  ('Variable', 'Variable'),
+  ('variables evaluated', 'variables evaluadas'),
+  ('Variables left empty add 0 points and are reported as not evaluated', 'Las variables vacías suman 0 puntos y se informan como no evaluadas'),
+  ('Vital signs', 'Signos vitales'),
+  ('White blood cells', 'Leucocitos'),
+  ('With FiO2 ≥ 0.5 the A-aDO2 gradient is used; otherwise PaO2', 'Con FiO2 ≥ 0,5 se usa el gradiente A-aDO2; de lo contrario, la PaO2'),
+  ('Yes', 'Sí'),
+  ('Oral intake', 'Vía oral'),
+  ('Enteral nutrition', 'Nutrición enteral'),
+  ('Parenteral nutrition', 'Nutrición parenteral'),
+  ('IV fluids', 'Sueros'),
+  ('IV medication', 'Medicación endovenosa'),
+  ('Blood products', 'Hemoderivados'),
+  ('Other intake', 'Otros ingresos'),
+  ('Urine output', 'Diuresis'),
+  ('Drains', 'Drenajes'),
+  ('Stools', 'Deposiciones'),
+  ('Insensible losses', 'Pérdidas insensibles'),
+  ('Other output', 'Otros egresos'),
+  ('Total intake', 'Total de ingresos'),
+  ('Total output', 'Total de egresos'),
+  ('Fluid balance', 'Balance hídrico'),
+  ('Shift', 'Turno'),
+  ('Morning', 'Mañana'),
+  ('Afternoon', 'Tarde'),
+  ('Night', 'Noche'),
+  ('Intake', 'Ingresos'),
+  ('Output', 'Egresos'),
+  ('Edit Nursing Fluid Balance', 'Editar balance hídrico de enfermería'),
+  ('New Nursing Fluid Balance', 'Nuevo balance hídrico de enfermería'),
+  ('Nursing Fluid Balance', 'Balance hídrico de enfermería'),
+  ('Fluid Balance Detail', 'Detalle del balance hídrico'),
+  ('No fluid balance records', 'No hay registros de balance hídrico'),
+  ('No values recorded', 'No se registraron valores'),
+  ('Positive balance', 'Balance positivo'),
+  ('Negative balance', 'Balance negativo'),
+  ('Neutral balance', 'Balance neutro'),
+  ('NURSING FLUID BALANCE RECORD', 'REGISTRO DE BALANCE HÍDRICO DE ENFERMERÍA'),
+  ('Fluid Balance', 'Balance Hídrico'),
+  ('Achieved', 'Logrado'),
+  ('Care Plan Detail', 'Detalle del plan de cuidados'),
+  ('Diagnosis code', 'Código de diagnóstico'),
+  ('Diagnosis code (optional)', 'Código de diagnóstico (opcional)'),
+  ('Edit Nursing Care Plan', 'Editar plan de cuidados de enfermería'),
+  ('e.g. NANDA-I or ICNP code', 'p. ej. código NANDA-I o CIPE (ICNP)'),
+  ('Enter at least a nursing diagnosis or a shift progress note.', 'Ingrese al menos un diagnóstico de enfermería o una evolución del turno.'),
+  ('Goal / expected outcome', 'Objetivo / resultado esperado'),
+  ('In progress', 'En curso'),
+  ('New Nursing Care Plan', 'Nuevo plan de cuidados de enfermería'),
+  ('No care plans recorded', 'No hay planes de cuidados registrados'),
+  ('Not achieved', 'No logrado'),
+  ('Nursing Care Plan', 'Plan de cuidados de enfermería'),
+  ('NURSING CARE PLAN RECORD', 'REGISTRO DE PLAN DE CUIDADOS DE ENFERMERÍA'),
+  ('Nursing diagnosis', 'Diagnóstico de enfermería'),
+  ('Nursing interventions', 'Intervenciones de enfermería'),
+  ('Outcome evaluation', 'Evaluación del resultado'),
+  ('Partially achieved', 'Parcialmente logrado'),
+  ('Relevant events of the shift', 'Eventos relevantes del turno'),
+  ('Shift progress note', 'Evolución de enfermería del turno'),
+  ('What care will be/was provided?', '¿Qué cuidados se brindarán/se brindaron?'),
+  ('What do you expect to achieve and by when?', '¿Qué espera lograr y para cuándo?'),
+  ('What problem or risk did you identify?', '¿Qué problema o riesgo identificó?'),
+  ('SOFA Score', 'Escala SOFA'),
+  ('New SOFA Score', 'Nueva escala SOFA'),
+  ('Edit SOFA Score', 'Editar escala SOFA'),
+  ('SOFA Score Detail', 'Detalle de escala SOFA'),
+  ('SOFA SCORE RECORD', 'REGISTRO DE ESCALA SOFA'),
+  ('No SOFA scores recorded', 'No hay escalas SOFA registradas'),
+  ('Sequential Organ Failure Assessment', 'Evaluación Secuencial de Falla Orgánica'),
+  ('Coagulation', 'Coagulación'),
+  ('Liver', 'Hepático'),
+  ('Cardiovascular', 'Cardiovascular'),
+  ('Central nervous system', 'Sistema nervioso central'),
+  ('Renal', 'Renal'),
+  ('PaO2/FiO2 ratio', 'Relación PaO2/FiO2'),
+  ('Fraction 0.21-1.0 or percentage 21-100', 'Fracción 0,21-1,0 o porcentaje 21-100'),
+  ('Mechanical ventilation / respiratory support', 'Ventilación mecánica / soporte respiratorio'),
+  ('Scores 3 and 4 require respiratory support', 'Los puntajes 3 y 4 requieren soporte respiratorio'),
+  ('Platelets', 'Plaquetas'),
+  ('Bilirubin', 'Bilirrubina'),
+  ('Mean arterial pressure (MAP)', 'Presión arterial media (PAM)'),
+  ('MAP', 'PAM'),
+  ('Dopamine', 'Dopamina'),
+  ('Dobutamine', 'Dobutamina'),
+  ('Dobutamine (any dose)', 'Dobutamina (cualquier dosis)'),
+  ('Epinephrine', 'Adrenalina'),
+  ('Norepinephrine', 'Noradrenalina'),
+  ('Vasopressor doses administered for at least 1 hour', 'Dosis de vasopresores administradas durante al menos 1 hora'),
+  ('systems evaluated', 'sistemas evaluados'),
+  ('Low', 'Bajo'),
+  ('Intermediate', 'Intermedio'),
+  ('High', 'Alto'),
+  ('points', 'puntos'),
+  ('System', 'Sistema'),
+  ('Values', 'Valores'),
+  ('Total Score', 'Puntaje total'),
+  ('Respiratory system', 'Sistema respiratorio'),
+  ('Mixed feeding', 'Mixta'),
+  ('Worst value of the first 24 h of the admission', 'Peor valor de las primeras 24 h de internación'),
+  ('Worst value of the last 24 h', 'Peor valor de las últimas 24 h'),
+  ('vital signs', 'signos vitales'),
+  ('ventilation record', 'registro de ventilación'),
+  ('nursing evaluation', 'evaluación de enfermería'),
+  ('Mechanical ventilation recorded in the last 24 h', 'Ventilación mecánica registrada en las últimas 24 h'),
+  ('Sum of %d fluid balances of the last 24 h', 'Suma de %d balances hídricos de las últimas 24 h'),
+  ('last', 'último'),
+  ('in the last 24 h', 'en las últimas 24 h'),
+  ('since the previous fluid balance', 'desde el balance hídrico anterior'),
+  ('Sum of %d nutrition records', 'Suma de %d registros de alimentación'),
+  ('Review before saving', 'Revisar antes de guardar'),
+  ('Print', 'Imprimir'),
+  ('Print this form as PDF', 'Imprimir este formulario en PDF'),
+  ('View signed record', 'Ver registro firmado'),
+  ('This record is signed and can no longer be edited.', 'Este registro está firmado y ya no se puede modificar.');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_uti_lang t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT (SELECT MIN(c.cons_id) FROM lang_constants c WHERE c.constant_name = t.cn), ll.lang_id, t.es
+FROM nursing_uti_lang t
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (
+  SELECT 1 FROM lang_definitions d
+  JOIN lang_constants c2 ON c2.cons_id = d.cons_id
+  WHERE c2.constant_name = t.cn AND d.lang_id = ll.lang_id
+);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;

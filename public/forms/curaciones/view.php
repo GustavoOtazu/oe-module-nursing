@@ -192,10 +192,12 @@ if ($id > 0) {
                 <span class="hora-principal"><?php echo text(date('H:i', $ts_date !== false ? $ts_date : time())); ?></span>
             </div>
             <div class="registro-acciones">
+                <?php if (!\OpenEMR\Modules\Nursing\FormLock::isLocked('curaciones', (int)($row['id'] ?? 0), $encounter)) : ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/curaciones/new.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . (int)($row['id'] ?? 0)); ?>"
                    class="btn btn-primary mr-1" onclick="top.restoreSession()">
                     <i class="fas fa-pen mr-1"></i><?php echo xlt('Edit'); ?>
                 </a>
+                <?php endif; ?>
                 <a href="<?php echo attr(OEGlobalsBag::getInstance()->getString('webroot') . '/interface/modules/custom_modules/oe-module-nursing/public/forms/curaciones/print.php?pid=' . $pid . '&encounter=' . $encounter . '&id=' . (int)($row['id'] ?? 0)); ?>"
                    target="_blank" class="btn btn-success" onclick="top.restoreSession()">
                     <i class="fas fa-print mr-1"></i><?php echo xlt('Print'); ?>

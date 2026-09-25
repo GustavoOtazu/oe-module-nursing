@@ -1,6 +1,6 @@
 {
     "name": "g0tazu/oe-module-nursing",
-    "description": "OpenEMR Nursing Module - Inpatient dashboard, nursing forms, and vital signs",
+    "description": "OpenEMR Nursing Module - Inpatient dashboard, ICU nursing forms (fluid balance, nutrition, SOFA, APACHE II, care plan) and vital signs",
     "type": "openemr-module",
     "license": "GPL-3.0",
     "authors": [
