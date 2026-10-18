@@ -191,11 +191,14 @@ final class ClinicalPrefill
               WHERE b.pid = ? AND b.encounter = ? AND b.date >= ? AND b.date <= ? AND b.eg_diuresis IS NOT NULL",
             [$this->pid, $this->encounter, $from, $to]
         );
-        if ($urine !== false && (int) ($urine['n'] ?? 0) > 0) {
+        $balances = $urine !== false ? (int) ($urine['n'] ?? 0) : 0;
+        if ($urine !== false && $balances > 0) {
+            $lastDate = $this->when((string) $urine['last_date']);
             $out['diuresis_24h'] = [
                 'value' => $this->fmt((float) $urine['total']),
-                'note' => sprintf(xl('Sum of %d fluid balances of the last 24 h'), (int) $urine['n'])
-                    . ' (' . xl('last') . ': ' . $this->when((string) $urine['last_date']) . ')',
+                'note' => $balances === 1
+                    ? xl('Fluid balance of the last 24 h') . ', ' . $lastDate
+                    : sprintf(xl('Sum of %d fluid balances of the last 24 h'), $balances) . ' (' . xl('last') . ': ' . $lastDate . ')',
             ];
         }
 
@@ -248,7 +251,9 @@ final class ClinicalPrefill
         foreach ($sum as $field => $total) {
             $out[$field] = [
                 'value' => $this->fmt($total),
-                'note' => sprintf(xl('Sum of %d nutrition records'), $count[$field]) . ' ' . $sinceNote,
+                'note' => ($count[$field] === 1
+                    ? xl('From one nutrition record')
+                    : sprintf(xl('Sum of %d nutrition records'), $count[$field])) . ' ' . $sinceNote,
             ];
         }
         return $out;

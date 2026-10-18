@@ -1062,6 +1062,8 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('in the last 24 h', 'en las últimas 24 h'),
   ('since the previous fluid balance', 'desde el balance hídrico anterior'),
   ('Sum of %d nutrition records', 'Suma de %d registros de alimentación'),
+  ('From one nutrition record', 'De un registro de alimentación'),
+  ('Fluid balance of the last 24 h', 'Balance hídrico de las últimas 24 h'),
   ('Review before saving', 'Revisar antes de guardar'),
   ('Print', 'Imprimir'),
   ('Print this form as PDF', 'Imprimir este formulario en PDF'),
