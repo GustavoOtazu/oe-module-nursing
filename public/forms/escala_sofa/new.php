@@ -24,6 +24,7 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
+use OpenEMR\Modules\Nursing\VitalsLink;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
 $pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
@@ -66,6 +67,7 @@ $hora_registro        = '';
 $observaciones        = '';
 /** @var array<string, array{value: string, note: string}> $prefill */
 $prefill              = [];
+$missingVitals        = false;
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -93,7 +95,9 @@ if ($is_edit) {
     // Prefill with the worst value of each system in the last 24 h, taken from
     // vital signs, nursing evaluations, ventilation records, fluid balances and
     // previous scores (see ClinicalPrefill). The nurse reviews it before saving.
-    $prefill = (new ClinicalPrefill($pid, $encounter))->forSofa();
+    $prefiller = new ClinicalPrefill($pid, $encounter);
+    $prefill = $prefiller->forSofa();
+    $missingVitals = $prefiller->vitalsCount() === 0;
     $pao2         = $prefill['pao2']['value']         ?? $pao2;
     $fio2         = $prefill['fio2']['value']         ?? $fio2;
     $plaquetas    = $prefill['plaquetas']['value']    ?? $plaquetas;
@@ -141,6 +145,13 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
             // the encounter's form list, which is the core convention.
             parent.closeTab(window.name, true);
 <?php endif; ?>
+            return false;
+        }
+
+        // Vitals are recorded in OpenEMR's own form, opened in this admission.
+        function openVitals() {
+            top.restoreSession();
+            (top.RTop || window).location = <?php echo js_escape(VitalsLink::url($pid, $encounter)); ?>;
             return false;
         }
     </script>
@@ -196,6 +207,14 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
             <small class="text-muted"><?php echo xlt('Sequential Organ Failure Assessment'); ?> — <?php echo xlt('Reference'); ?>: Vincent et al., 1996</small>
         </div>
     </div>
+
+<?php if ($missingVitals) : ?>
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-heartbeat mr-1"></i><?php echo xlt('No vital signs recorded in the last 24 h'); ?>.
+        <a href="#" onclick="return openVitals();"><?php echo xlt('Record vital signs'); ?></a>
+        <small>(<?php echo xlt('leaves this form'); ?>)</small>
+    </div>
+<?php endif; ?>
 
     <form method="POST" action="<?php echo attr($save_url); ?>" id="formEscalaSofa" onsubmit="top.restoreSession();">
         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>">

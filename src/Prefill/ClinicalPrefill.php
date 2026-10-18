@@ -33,10 +33,22 @@ use OpenEMR\Modules\Nursing\Scoring\WorstValue;
 
 final class ClinicalPrefill
 {
+    /** Vital signs found in the window of the last forApache()/forSofa() call. */
+    private int $vitalsFound = 0;
+
     public function __construct(
         private readonly int $pid,
         private readonly int $encounter
     ) {
+    }
+
+    /**
+     * Number of vital sign records the last forApache() or forSofa() call found
+     * in its window, so the form can point out that there were none to use.
+     */
+    public function vitalsCount(): int
+    {
+        return $this->vitalsFound;
     }
 
     /**
@@ -47,6 +59,7 @@ final class ClinicalPrefill
         [$from, $to] = $this->admissionWindow();
         $label = xl('Worst value of the first 24 h of the admission');
         $vitals = $this->vitals($from, $to);
+        $this->vitalsFound = count($vitals);
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
         $out = [];
@@ -130,6 +143,7 @@ final class ClinicalPrefill
         [$from, $to] = $this->lastDayWindow();
         $label = xl('Worst value of the last 24 h');
         $vitals = $this->vitals($from, $to);
+        $this->vitalsFound = count($vitals);
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
         $ventilation = $this->ventilationRows($from, $to);

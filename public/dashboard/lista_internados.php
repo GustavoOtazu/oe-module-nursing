@@ -191,6 +191,7 @@ $nursing_forms = [
         .enf-icon--indigo { background: #3949AB; }
         .enf-icon--pink   { background: #D81B60; }
         .enf-icon--cyan   { background: #00ACC1; }
+        .enf-icon--slate  { background: #546E7A; }
 
         .btn-enf-card .enf-label {
             font-size: 12px;
@@ -509,6 +510,15 @@ $nursing_forms = [
                                     <div class="enf-label"><?php echo xlt('Nursing Care Plan'); ?></div>
                                 </button>
                             </div>
+                            <!-- Vital signs: OpenEMR's own vitals form, opened in this admission -->
+                            <div class="col-md-4 col-sm-6 enf-col">
+                                <button class="btn-enf-card btn-enfVitals" type="button">
+                                    <div class="enf-icon enf-icon--slate">
+                                        <i class="fa fa-thermometer-half fa-2x"></i>
+                                    </div>
+                                    <div class="enf-label"><?php echo xlt('Vital Signs'); ?></div>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -611,6 +621,22 @@ $nursing_forms = [
                     top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/forms/' + form
                         + '/new.php?mode=new&id=0&pid=' + pid_sel + '&encounter=' + encounter_sel
                         + '&from=list';
+                }, 300);
+            });
+
+            // Vital signs — the module has no vitals form of its own: open OpenEMR's
+            // in this admission. encounter_top.php sets the patient and encounter in
+            // the session first, so the vitals are saved in the right encounter.
+            $(document).on('click', '.btn-enfVitals', function() {
+                if (!encounter_sel || !pid_sel) {
+                    alert(<?php echo js_escape(xlt('Error: Could not retrieve patient data.')); ?>);
+                    return;
+                }
+                $('#modal_Enf').modal('hide');
+                setTimeout(function() {
+                    top.RTop.location = webroot_url + '/interface/patient_file/encounter/encounter_top.php'
+                        + '?set_encounter=' + encodeURIComponent(encounter_sel) + '&pid=' + encodeURIComponent(pid_sel)
+                        + '&formname=vitals&formdesc=' + encodeURIComponent(<?php echo js_escape(xl('Vital Signs')); ?>);
                 }, 300);
             });
 

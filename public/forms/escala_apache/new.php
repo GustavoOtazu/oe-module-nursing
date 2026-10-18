@@ -25,6 +25,7 @@ use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
+use OpenEMR\Modules\Nursing\VitalsLink;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
 $pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
@@ -76,6 +77,7 @@ $hora_registro             = '';
 $observaciones             = '';
 /** @var array<string, array{value: string, note: string}> $prefill */
 $prefill                   = [];
+$missingVitals             = false;
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -109,7 +111,9 @@ if ($is_edit) {
     // 24 h of the admission (Knaus et al., 1985), taken from vital signs, nursing
     // evaluations, ventilation records and previous scores (see ClinicalPrefill).
     // The nurse reviews each value before saving.
-    $prefill = (new ClinicalPrefill($pid, $encounter))->forApache();
+    $prefiller = new ClinicalPrefill($pid, $encounter);
+    $prefill = $prefiller->forApache();
+    $missingVitals = $prefiller->vitalsCount() === 0;
     foreach ($prefill as $field => $data) {
         if (array_key_exists($field, $vals)) {
             $vals[$field] = $data['value'];
@@ -173,6 +177,13 @@ $numInput = static function (string $name, string $label, string $unit, string $
 <?php endif; ?>
             return false;
         }
+
+        // Vitals are recorded in OpenEMR's own form, opened in this admission.
+        function openVitals() {
+            top.restoreSession();
+            (top.RTop || window).location = <?php echo js_escape(VitalsLink::url($pid, $encounter)); ?>;
+            return false;
+        }
     </script>
     <style>
         .apache-form * { box-sizing: border-box; }
@@ -230,6 +241,14 @@ $numInput = static function (string $name, string $label, string $unit, string $
         <?php echo xlt('Variables left empty add 0 points and are reported as not evaluated'); ?>.
         <br><small class="text-muted"><?php echo xlt('Reference'); ?>: Knaus et al., 1985</small>
     </div>
+
+<?php if ($missingVitals) : ?>
+    <div class="alert alert-warning" role="alert">
+        <i class="fa fa-heartbeat mr-1"></i><?php echo xlt('No vital signs recorded in the first 24 h of the admission'); ?>.
+        <a href="#" onclick="return openVitals();"><?php echo xlt('Record vital signs'); ?></a>
+        <small>(<?php echo xlt('leaves this form'); ?>)</small>
+    </div>
+<?php endif; ?>
 
     <form method="POST" action="<?php echo attr($save_url); ?>" id="formEscalaApache" onsubmit="top.restoreSession();">
         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>">
