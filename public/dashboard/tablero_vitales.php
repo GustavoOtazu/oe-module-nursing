@@ -48,6 +48,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         .vs-empty { font-size: 13px; opacity: 0.75; margin: 10px 0; }
         .vs-chart { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 8px; padding: 10px; margin-bottom: 16px; }
         .vs-chart h6 { margin-bottom: 6px; }
+        .vs-canvas { position: relative; height: 240px; }
     </style>
 </head>
 <body class="body_top">
@@ -78,10 +79,10 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         </div>
         <p class="text-muted" id="vs-evo-empty" hidden><?php echo xlt('No vital signs in this period.'); ?></p>
         <div class="row" id="vs-evo-charts">
-            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Blood pressure'); ?> (mmHg)</h6><canvas id="vs-c-bp" height="160"></canvas></div></div>
-            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Heart and respiratory rate'); ?></h6><canvas id="vs-c-rate" height="160"></canvas></div></div>
-            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Temperature'); ?> (°C)</h6><canvas id="vs-c-temp" height="160"></canvas></div></div>
-            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Oxygen saturation'); ?> (%)</h6><canvas id="vs-c-spo2" height="160"></canvas></div></div>
+            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Blood pressure'); ?> (mmHg)</h6><div class="vs-canvas"><canvas id="vs-c-bp"></canvas></div></div></div>
+            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Heart and respiratory rate'); ?></h6><div class="vs-canvas"><canvas id="vs-c-rate"></canvas></div></div></div>
+            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Temperature'); ?> (°C)</h6><div class="vs-canvas"><canvas id="vs-c-temp"></canvas></div></div></div>
+            <div class="col-lg-6"><div class="vs-chart"><h6><?php echo xlt('Oxygen saturation'); ?> (%)</h6><div class="vs-canvas"><canvas id="vs-c-spo2"></canvas></div></div></div>
         </div>
     </div>
 </div>
@@ -250,10 +251,11 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
             options: {
                 animation: false,
                 parsing: false,
+                maintainAspectRatio: false,
                 spanGaps: true,
                 plugins: { legend: { labels: { color: color } } },
                 scales: {
-                    x: { type: 'time', time: { tooltipFormat: 'dd/MM HH:mm', displayFormats: { hour: 'dd/MM HH:mm', day: 'dd/MM' } },
+                    x: { type: 'time', time: { tooltipFormat: 'dd/MM HH:mm', displayFormats: { minute: 'HH:mm', hour: 'dd/MM HH:mm', day: 'dd/MM' } },
                          ticks: { color: color }, grid: { color: 'rgba(128,128,128,0.2)' } },
                     y: Object.assign({ ticks: { color: color }, grid: { color: 'rgba(128,128,128,0.2)' } }, opts || {})
                 }
