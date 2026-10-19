@@ -100,6 +100,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         noVitals: <?php echo js_escape(xl('No vital signs recorded in this admission.')); ?>,
         lastTake: <?php echo js_escape(xl('Last take')); ?>,
         hoursAgo: <?php echo js_escape(xl('%s h ago')); ?>,
+        daysAgo: <?php echo js_escape(xl('%s days ago')); ?>,
         stale: <?php echo js_escape(xl('More than 6 h without vital signs')); ?>,
         evolution: <?php echo js_escape(xl('Evolution')); ?>,
         record_vitals: <?php echo js_escape(xl('Record vital signs')); ?>,
@@ -131,6 +132,9 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     function fmt(v) {
         return (v === null || v === undefined) ? '—' : String(Math.round(v * 10) / 10);
     }
+    function ago(h) {
+        return h > 48 ? TXT.daysAgo.replace('%s', String(Math.round(h / 24))) : TXT.hoursAgo.replace('%s', fmt(h));
+    }
     function go(url) {
         top.restoreSession();
         top.RTop.location = url;
@@ -145,7 +149,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         if (a.last) {
             var stale = a.last.hours_ago !== null && a.last.hours_ago > STALE_HOURS;
             var when = el('div', 'vs-when' + (stale ? ' stale' : ''),
-                TXT.lastTake + ': ' + a.last.when + (a.last.hours_ago !== null ? ' (' + TXT.hoursAgo.replace('%s', fmt(a.last.hours_ago)) + ')' : ''));
+                TXT.lastTake + ': ' + a.last.when + (a.last.hours_ago !== null ? ' (' + ago(a.last.hours_ago) + ')' : ''));
             if (stale) {
                 when.title = TXT.stale;
                 when.prepend(el('i', 'fa fa-exclamation-triangle mr-1'));

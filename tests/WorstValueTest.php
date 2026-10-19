@@ -70,6 +70,15 @@ class WorstValueTest extends TestCase
         $this->assertNull(WorstValue::fahrenheitToCelsius(null));
     }
 
+    public function testTemperatureAlreadyInCelsiusIsKept(): void
+    {
+        // 37 stored in the Fahrenheit column was entered in Celsius, not 2.8 C.
+        $this->assertSame(37.0, WorstValue::fahrenheitToCelsius(37.0));
+        $this->assertSame(38.5, WorstValue::fahrenheitToCelsius(38.5));
+        // Real Fahrenheit values are still converted.
+        $this->assertSame(35.0, WorstValue::fahrenheitToCelsius(95.0));
+    }
+
     public function testMeanArterialPressure(): void
     {
         $this->assertSame(93.3, WorstValue::meanArterialPressure(120, 80));

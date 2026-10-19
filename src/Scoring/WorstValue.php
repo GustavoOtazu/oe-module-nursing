@@ -46,11 +46,19 @@ final class WorstValue
         return $best;
     }
 
-    /** OpenEMR stores vital-sign temperatures in degrees Fahrenheit. */
+    /**
+     * OpenEMR stores vital-sign temperatures in degrees Fahrenheit. A stored value
+     * between 25 and 45 cannot be Fahrenheit for a living patient (-4 to 7 C): it
+     * was entered in Celsius (e.g. by an import), so it is kept as it is instead
+     * of becoming an impossible temperature that would score as hypothermia.
+     */
     public static function fahrenheitToCelsius(?float $fahrenheit): ?float
     {
         if ($fahrenheit === null || $fahrenheit <= 0) {
             return null;
+        }
+        if ($fahrenheit >= 25.0 && $fahrenheit <= 45.0) {
+            return round($fahrenheit, 1);
         }
         return round(($fahrenheit - 32) * 5 / 9, 1);
     }
