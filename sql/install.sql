@@ -1081,7 +1081,7 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('No data', 'Sin datos'),
   ('No data for', 'Sin datos de'),
   ('These systems add 0 points, so the real score may be higher.', 'Esos sistemas suman 0 puntos, así que el puntaje real puede ser mayor.'),
-  ('Respiratory', 'Respiratorio'),
+  ('Respiratory (SOFA system)', 'Respiratorio'),
   ('CNS', 'SNC'),
   ('Enter PaO2 and FiO2 to evaluate this system', 'Cargar PaO2 y FiO2 para evaluar este sistema'),
   ('Enter the platelets to evaluate this system', 'Cargar las plaquetas para evaluar este sistema'),

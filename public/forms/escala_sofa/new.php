@@ -191,6 +191,9 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         .sofa-form .sofa-systems { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
         .sofa-form .sofa-chip { font-size: 12px; padding: 2px 9px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.35); }
         .sofa-form .sofa-chip.no-data { border-style: dashed; opacity: 0.7; }
+        .sofa-form .sofa-chip.pts-0    { background: rgba(40, 167, 69, 0.20); }
+        .sofa-form .sofa-chip.pts-mid  { background: rgba(255, 193, 7, 0.28); }
+        .sofa-form .sofa-chip.pts-high { background: rgba(220, 53, 69, 0.28); }
         .sofa-form .field-hint { font-size: 11px; opacity: 0.75; }
         .sofa-form .prefill-hint { display: block; color: #0d6efd; opacity: 0.9; }
         .sofa-form .sofa-summary {
@@ -440,7 +443,7 @@ var SOFA_TXT = {
     missing: <?php echo js_escape(xl('No data for')); ?>,
     missingNote: <?php echo js_escape(xl('These systems add 0 points, so the real score may be higher.')); ?>,
     systems: {
-        sub_resp: <?php echo js_escape(xl('Respiratory')); ?>,
+        sub_resp: <?php echo js_escape(xl('Respiratory (SOFA system)')); ?>,
         sub_coag: <?php echo js_escape(xl('Coagulation')); ?>,
         sub_hepatico: <?php echo js_escape(xl('Liver')); ?>,
         sub_cardio: <?php echo js_escape(xl('Cardiovascular')); ?>,
@@ -596,6 +599,7 @@ function calcularSofa() {
             total += scores[key];
             evaluated++;
             chip.textContent = SOFA_TXT.systems[key] + ': ' + scores[key];
+            chip.classList.add(scores[key] === 0 ? 'pts-0' : (scores[key] <= 2 ? 'pts-mid' : 'pts-high'));
         } else {
             missing.push(SOFA_TXT.systems[key]);
             chip.classList.add('no-data');
