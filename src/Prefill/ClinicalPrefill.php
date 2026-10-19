@@ -36,6 +36,9 @@ final class ClinicalPrefill
     /** Vital signs found in the window of the last forApache()/forSofa() call. */
     private int $vitalsFound = 0;
 
+    /** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}> */
+    private array $takes = [];
+
     public function __construct(
         private readonly int $pid,
         private readonly int $encounter
@@ -52,6 +55,19 @@ final class ClinicalPrefill
     }
 
     /**
+     * Vital sign takes of the window of the last forApache() or forSofa() call,
+     * most recent first, with their points in that scale. The worst one fills the
+     * fields that come from vital signs; the form lets the nurse pick another one
+     * and saves the id of the chosen take with the score.
+     *
+     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}>
+     */
+    public function vitalsTakes(): array
+    {
+        return $this->takes;
+    }
+
+    /**
      * @return array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}>
      */
     public function forApache(): array
@@ -60,25 +76,37 @@ final class ClinicalPrefill
         $label = xl('Worst value of the first 24 h of the admission');
         $vitals = $this->vitals($from, $to);
         $this->vitalsFound = count($vitals);
+        // Vital signs are chosen as a whole take (see vitalsTakes()); the other
+        // sources are only used for a variable when no take has it.
+        $this->takes = $this->takes($vitals, static function (array $v): ?int {
+            $parts = array_filter([
+                ApacheIIScore::temperature($v['temp_c']),
+                ApacheIIScore::meanArterialPressure($v['map']),
+                ApacheIIScore::heartRate($v['pulse']),
+                ApacheIIScore::respiratoryRate($v['respiration']),
+            ], static fn(?int $p): bool => $p !== null);
+            return $parts === [] ? null : array_sum($parts);
+        });
+        $vitalsForChoice = $this->takes === [] ? $vitals : [];
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
         $out = [];
 
         $this->choose($out, 'temperatura', $label,
-            array_merge($this->series($vitals, 'temp_c', xl('vital signs')), $this->series($apache, 'temperatura', xl('APACHE II'))),
+            array_merge($this->series($vitalsForChoice, 'temp_c', xl('vital signs')), $this->series($apache, 'temperatura', xl('APACHE II'))),
             static fn(array $c): ?int => ApacheIIScore::temperature($c['value'])
         );
         $this->choose($out, 'pam', $label,
-            array_merge($this->series($vitals, 'map', xl('vital signs')), $this->series($apache, 'pam', xl('APACHE II')), $this->series($sofa, 'pam', xl('SOFA'))),
+            array_merge($this->series($vitalsForChoice, 'map', xl('vital signs')), $this->series($apache, 'pam', xl('APACHE II')), $this->series($sofa, 'pam', xl('SOFA'))),
             static fn(array $c): ?int => ApacheIIScore::meanArterialPressure($c['value'])
         );
         $this->choose($out, 'frecuencia_cardiaca', $label,
-            array_merge($this->series($vitals, 'pulse', xl('vital signs')), $this->series($apache, 'frecuencia_cardiaca', xl('APACHE II'))),
+            array_merge($this->series($vitalsForChoice, 'pulse', xl('vital signs')), $this->series($apache, 'frecuencia_cardiaca', xl('APACHE II'))),
             static fn(array $c): ?int => ApacheIIScore::heartRate($c['value'])
         );
         $this->choose($out, 'frecuencia_respiratoria', $label,
             array_merge(
-                $this->series($vitals, 'respiration', xl('vital signs')),
+                $this->series($vitalsForChoice, 'respiration', xl('vital signs')),
                 $this->series($this->ventilationRows($from, $to), 'frecuencia_respiratoria', xl('ventilation record')),
                 $this->series($apache, 'frecuencia_respiratoria', xl('APACHE II'))
             ),
@@ -131,6 +159,8 @@ final class ClinicalPrefill
             static fn(array $c): ?int => ApacheIIScore::glasgow($c['value'])
         );
 
+        $this->applyWorstTake($out, $label, ['temp_c' => 'temperatura', 'map' => 'pam', 'pulse' => 'frecuencia_cardiaca', 'respiration' => 'frecuencia_respiratoria']);
+
         return $out;
     }
 
@@ -143,6 +173,10 @@ final class ClinicalPrefill
         $label = xl('Worst value of the last 24 h');
         $vitals = $this->vitals($from, $to);
         $this->vitalsFound = count($vitals);
+        // Vital signs are chosen as a whole take (see vitalsTakes()); SOFA only
+        // uses their mean arterial pressure.
+        $this->takes = $this->takes($vitals, static fn(array $v): ?int => SofaScore::cardiovascular($v['map'], null, false, null, null));
+        $vitalsForChoice = $this->takes === [] ? $vitals : [];
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
         $ventilation = $this->ventilationRows($from, $to);
@@ -184,7 +218,7 @@ final class ClinicalPrefill
         $this->choose($out, 'plaquetas', $label, $this->series($sofa, 'plaquetas', xl('SOFA')), static fn(array $c): ?int => SofaScore::coagulation($c['value']));
         $this->choose($out, 'bilirrubina', $label, $this->series($sofa, 'bilirrubina', xl('SOFA')), static fn(array $c): ?int => SofaScore::liver($c['value']));
         $this->choose($out, 'pam', $label,
-            array_merge($this->series($vitals, 'map', xl('vital signs')), $this->series($sofa, 'pam', xl('SOFA')), $this->series($apache, 'pam', xl('APACHE II'))),
+            array_merge($this->series($vitalsForChoice, 'map', xl('vital signs')), $this->series($sofa, 'pam', xl('SOFA')), $this->series($apache, 'pam', xl('APACHE II'))),
             static fn(array $c): ?int => SofaScore::cardiovascular($c['value'], null, false, null, null)
         );
         $this->choose($out, 'glasgow', $label,
@@ -214,6 +248,8 @@ final class ClinicalPrefill
                     : sprintf(xl('Sum of %d fluid balances of the last 24 h'), $balances) . ' (' . xl('last') . ': ' . $lastDate . ')',
             ];
         }
+
+        $this->applyWorstTake($out, $label, ['map' => 'pam']);
 
         return $out;
     }
@@ -312,7 +348,7 @@ final class ClinicalPrefill
     {
         /** @var list<array<string, string|int|null>> $rows */
         $rows = QueryUtils::fetchRecords(
-            "SELECT v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature
+            "SELECT v.id, v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature
                FROM form_vitals v
                JOIN forms f ON f.form_id = v.id AND f.formdir = 'vitals' AND f.deleted = 0
               WHERE v.pid = ? AND v.date >= ? AND v.date <= ?
@@ -323,8 +359,13 @@ final class ClinicalPrefill
         foreach ($rows as $r) {
             $pulse = Num::parse($r['pulse'] ?? null);
             $respiration = Num::parse($r['respiration'] ?? null);
+            $bps = Num::parse($r['bps'] ?? null);
+            $bpd = Num::parse($r['bpd'] ?? null);
             $out[] = [
+                'id' => (int) $r['id'],
                 'date' => (string) $r['date'],
+                'bps' => ($bps !== null && $bps > 0) ? $bps : null,
+                'bpd' => ($bpd !== null && $bpd > 0) ? $bpd : null,
                 'temp_c' => WorstValue::fahrenheitToCelsius(Num::parse($r['temperature'] ?? null)),
                 'map' => WorstValue::meanArterialPressure(Num::parse($r['bps'] ?? null), Num::parse($r['bpd'] ?? null)),
                 'pulse' => ($pulse !== null && $pulse > 0) ? $pulse : null,
@@ -389,6 +430,70 @@ final class ClinicalPrefill
             $out[] = ['value' => $value, 'time' => (string) ($r['date'] ?? ''), 'source' => $source];
         }
         return $out;
+    }
+
+    /**
+     * Takes that have something to score, most recent first, marking the worst
+     * one (most points; ties: the most recent) and the most recent one.
+     *
+     * @param list<array<string, mixed>> $vitals
+     * @param callable(array<string, mixed>): ?int $points
+     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}>
+     */
+    private function takes(array $vitals, callable $points): array
+    {
+        $scored = [];
+        foreach ($vitals as $v) {
+            $p = $points($v);
+            if ($p !== null) {
+                $scored[] = $v + ['points' => $p, 'time' => (string) $v['date']];
+            }
+        }
+        if ($scored === []) {
+            return [];
+        }
+        $worst = WorstValue::pick($scored, static fn(array $c): int => $c['points']);
+        usort($scored, static fn(array $a, array $b): int => [$b['time'], $b['id']] <=> [$a['time'], $a['id']]);
+        $out = [];
+        foreach ($scored as $i => $v) {
+            $out[] = [
+                'id' => (int) $v['id'],
+                'when' => $this->when((string) $v['date']),
+                'bps' => $v['bps'],
+                'bpd' => $v['bpd'],
+                'map' => $v['map'],
+                'temp_c' => $v['temp_c'],
+                'pulse' => $v['pulse'],
+                'respiration' => $v['respiration'],
+                'points' => (int) $v['points'],
+                'worst' => $worst !== null && (int) $v['id'] === (int) $worst['id'],
+                'latest' => $i === 0,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Fills the fields that come from vital signs with the worst take.
+     *
+     * @param array<string, array<string, mixed>> $out
+     * @param array<string, string> $fields take key => form field
+     */
+    private function applyWorstTake(array &$out, string $label, array $fields): void
+    {
+        foreach ($this->takes as $take) {
+            if (!$take['worst']) {
+                continue;
+            }
+            foreach ($fields as $key => $field) {
+                if ($take[$key] !== null) {
+                    $out[$field] = [
+                        'value' => $this->fmt((float) $take[$key]),
+                        'note' => $label . ': ' . xl('vital signs') . ', ' . $take['when'],
+                    ];
+                }
+            }
+        }
     }
 
     /**

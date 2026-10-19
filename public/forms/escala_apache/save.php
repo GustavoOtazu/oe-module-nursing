@@ -22,6 +22,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\VitalsChoice;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 use OpenEMR\Modules\Nursing\Scoring\Num;
 use OpenEMR\Services\FormService;
@@ -164,6 +165,10 @@ if ($is_edit) {
         )
     );
 } else {
+    // The vital signs take the score was calculated with is set once, when the
+    // record is created; editing a record does not change it.
+    $data['vitals_id'] = VitalsChoice::postedId($pid);
+    $columns = array_keys($data);
     $newid = QueryUtils::sqlInsert(
         "INSERT INTO form_escala_apache (
             date, pid, encounter, user, groupname, authorized, activity, `" . implode('`, `', $columns) . "`

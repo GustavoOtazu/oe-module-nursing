@@ -22,6 +22,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\VitalsChoice;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -310,6 +311,10 @@ $buildRows = static function (array $row, array $calc) use ($num, $withUnit): ar
 
         <?php if ((string)($row['hora_registro'] ?? '') !== '') : ?>
         <small class="text-muted"><?php echo xlt('Record Time'); ?>: <?php echo text(substr((string)$row['hora_registro'], 0, 5)); ?></small>
+        <?php endif; ?>
+        <?php $vitalsUsed = VitalsChoice::describe((int)($row['vitals_id'] ?? 0), $pid); ?>
+        <?php if ($vitalsUsed !== null) : ?>
+        <br><small class="text-muted"><?php echo xlt('Vital signs take used'); ?>: <?php echo text($vitalsUsed); ?></small>
         <?php endif; ?>
     </div>
     <?php endforeach; ?>

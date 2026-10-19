@@ -22,6 +22,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\VitalsChoice;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
 $pid       = (is_numeric($v = filter_input(INPUT_GET, 'pid', FILTER_SANITIZE_NUMBER_INT)) ? (int) $v : 0)
@@ -245,6 +246,10 @@ $sofaSystems = static function (array $row) use ($fmt): array {
 
         <?php if ((string)($row['hora_registro'] ?? '') !== '') : ?>
         <small class="text-muted"><?php echo xlt('Record Time'); ?>: <?php echo text(substr((string)$row['hora_registro'], 0, 5)); ?></small>
+        <?php endif; ?>
+        <?php $vitalsUsed = VitalsChoice::describe((int)($row['vitals_id'] ?? 0), $pid); ?>
+        <?php if ($vitalsUsed !== null) : ?>
+        <br><small class="text-muted"><?php echo xlt('Vital signs take used'); ?>: <?php echo text($vitalsUsed); ?></small>
         <?php endif; ?>
         <br><small class="text-muted">Vincent et al., 1996</small>
     </div>

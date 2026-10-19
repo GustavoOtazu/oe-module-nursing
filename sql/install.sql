@@ -818,6 +818,14 @@ CREATE TABLE `form_escala_apache` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 #EndIf
 
+#IfMissingColumn form_escala_sofa vitals_id
+ALTER TABLE `form_escala_sofa` ADD COLUMN `vitals_id` bigint(20) DEFAULT NULL COMMENT 'form_vitals.id of the vital signs take used';
+#EndIf
+
+#IfMissingColumn form_escala_apache vitals_id
+ALTER TABLE `form_escala_apache` ADD COLUMN `vitals_id` bigint(20) DEFAULT NULL COMMENT 'form_vitals.id of the vital signs take used';
+#EndIf
+
 #IfNotTable form_plan_cuidados
 CREATE TABLE `form_plan_cuidados` (
   `id`                     bigint(20)    NOT NULL AUTO_INCREMENT,
@@ -1070,6 +1078,16 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('No vital signs recorded in the last 24 h', 'No hay signos vitales registrados en las últimas 24 h'),
   ('No vital signs recorded in the first 24 h of the admission', 'No hay signos vitales registrados en las primeras 24 h de la internación'),
   ('Show values (%d)', 'Ver valores (%d)'),
+  ('Vital signs take', 'Toma de signos vitales'),
+  ('Vital signs take used', 'Toma de signos vitales usada'),
+  ('Chosen vital signs take', 'Toma de signos vitales elegida'),
+  ('The worst take of the period is preselected. The values of the chosen take fill the fields that come from vital signs, and the take is saved with this score.', 'Se preselecciona la peor toma del período. Los valores de la toma elegida completan los campos que salen de los signos vitales, y la toma queda guardada con esta escala.'),
+  ('BP', 'PA'),
+  ('MAP', 'PAM'),
+  ('HR', 'FC'),
+  ('RR', 'FR'),
+  ('worst', 'peor'),
+  ('latest', 'último'),
   ('Chosen by the user', 'Elegido por el usuario'),
   ('Proposed', 'Propuesto'),
   ('Latest', 'Último'),

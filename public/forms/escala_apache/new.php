@@ -25,6 +25,7 @@ use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
 use OpenEMR\Modules\Nursing\Prefill\PrefillOptions;
+use OpenEMR\Modules\Nursing\Prefill\VitalsChoice;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 use OpenEMR\Modules\Nursing\VitalsLink;
 
@@ -79,6 +80,9 @@ $observaciones             = '';
 /** @var array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}> $prefill */
 $prefill                   = [];
 $missingVitals             = false;
+/** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}> $takes */
+$takes                     = [];
+$linkedVitals              = null;
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -92,6 +96,7 @@ if ($is_edit) {
         $tipo_ingreso              = (string)($row['tipo_ingreso'] ?? '');
         $hora_registro             = substr((string)($row['hora_registro'] ?? ''), 0, 5);
         $observaciones             = (string)($row['observaciones'] ?? '');
+        $linkedVitals              = VitalsChoice::describe((int)($row['vitals_id'] ?? 0), $pid);
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
     }
@@ -115,6 +120,7 @@ if ($is_edit) {
     $prefiller = new ClinicalPrefill($pid, $encounter);
     $prefill = $prefiller->forApache();
     $missingVitals = $prefiller->vitalsCount() === 0;
+    $takes = $prefiller->vitalsTakes();
     foreach ($prefill as $field => $data) {
         if (array_key_exists($field, $vals)) {
             $vals[$field] = $data['value'];
@@ -260,6 +266,12 @@ $numInput = static function (string $name, string $label, string $unit, string $
         <?php if ($is_edit) : ?>
         <input type="hidden" name="id" value="<?php echo attr((string)$id); ?>">
         <?php endif; ?>
+
+<?php if (!$is_edit) : ?>
+        <?php VitalsChoice::render($takes, ['temp_c' => 'temperatura', 'map' => 'pam', 'pulse' => 'frecuencia_cardiaca', 'respiration' => 'frecuencia_respiratoria']); ?>
+<?php elseif ($linkedVitals !== null) : ?>
+        <p class="small text-muted"><i class="fa fa-heartbeat mr-1"></i><?php echo xlt('Vital signs take used'); ?>: <?php echo text($linkedVitals); ?></p>
+<?php endif; ?>
 
         <!-- VITAL SIGNS -->
         <div class="form-section">

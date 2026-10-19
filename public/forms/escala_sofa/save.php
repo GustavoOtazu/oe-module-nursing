@@ -22,6 +22,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\Prefill\VitalsChoice;
 use OpenEMR\Modules\Nursing\Scoring\Num;
 use OpenEMR\Modules\Nursing\Scoring\SofaScore;
 use OpenEMR\Services\FormService;
@@ -152,7 +153,7 @@ if ($is_edit) {
             pafi,
             sofa_resp, sofa_coag, sofa_hepatico, sofa_cardio, sofa_snc, sofa_renal,
             sofa_total, sofa_evaluados,
-            observaciones
+            observaciones, vitals_id
          ) VALUES (
             NOW(), ?, ?, ?, ?, ?, 1,
             ?,
@@ -163,9 +164,11 @@ if ($is_edit) {
             ?,
             ?, ?, ?, ?, ?, ?,
             ?, ?,
-            ?
+            ?, ?
          )",
-        array_merge([$pid, $encounter, $user, $groupname, $authorized], $data)
+        // The vital signs take the score was calculated with is set once, when the
+        // record is created; editing a record does not change it.
+        array_merge([$pid, $encounter, $user, $groupname, $authorized], $data, [VitalsChoice::postedId($pid)])
     );
     (new FormService())->addForm($encounter, 'SOFA Score', (int)$newid, 'escala_sofa', $pid, $authorized);
 }
