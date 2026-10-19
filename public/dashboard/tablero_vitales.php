@@ -135,9 +135,20 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     function ago(h) {
         return h > 48 ? TXT.daysAgo.replace('%s', String(Math.round(h / 24))) : TXT.hoursAgo.replace('%s', fmt(h));
     }
+    // OpenEMR keeps the session alive with top.restoreSession(); the page also
+    // works on its own (outside OpenEMR's tabs), where it does not exist.
+    function restore() {
+        if (typeof top.restoreSession === 'function') {
+            top.restoreSession();
+        }
+    }
     function go(url) {
-        top.restoreSession();
-        top.RTop.location = url;
+        restore();
+        if (top.RTop) {
+            top.RTop.location = url;
+        } else {
+            window.location = url;
+        }
     }
 
     function card(a) {
@@ -212,7 +223,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     }
 
     function load() {
-        top.restoreSession();
+        restore();
         fetch(DATA_URL + '?action=latest', { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
@@ -260,7 +271,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     }
 
     function loadSeries() {
-        top.restoreSession();
+        restore();
         fetch(DATA_URL + '?action=series&encounter=' + encodeURIComponent(selected.encounter) + '&hours=' + hours, { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (d) {
