@@ -1161,3 +1161,53 @@ WHERE NOT EXISTS (
 );
 
 DROP TEMPORARY TABLE IF EXISTS nursing_uti_lang;
+
+-- ---------------------------------------------------------------------------
+-- Nursing Module: Spanish for keys that had no row, or that core OpenEMR already
+-- holds with an empty definition (then the English text was shown). Empty
+-- definitions are filled; non-empty core translations are left as they are.
+-- ---------------------------------------------------------------------------
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang;
+CREATE TEMPORARY TABLE nursing_fix_lang (cn VARCHAR(255) NOT NULL, es TEXT NOT NULL) DEFAULT CHARSET=utf8mb4;
+INSERT INTO nursing_fix_lang (cn, es) VALUES
+  ('Observations', 'Observaciones'),
+  ('Encounter not found', 'Visita no encontrada'),
+  ('Care Bundle Record', 'Registro de bundle de cuidados'),
+  ('Wound Care Record', 'Registro de curaciones'),
+  ('Application Record', 'Registro de aplicaciones'),
+  ('Recorded', 'Registrado'),
+  ('active', 'activos'),
+  ('inactive', 'inactivos'),
+  ('Active parameters', 'Parámetros activos'),
+  ('Active items', 'Ítems activos'),
+  ('Adult Therapy', 'Terapia de adultos'),
+  ('Pediatric Therapy', 'Terapia pediátrica'),
+  ('Intensive', 'Intensivo'),
+  ('Minimal', 'Mínimo'),
+  ('Medications', 'Medicamentos'),
+  ('Pupils', 'Pupilas'),
+  ('No data found', 'No se encontraron datos'),
+  ('No data found for this record.', 'No se encontraron datos para este registro.'),
+  ('Method not allowed', 'Método no permitido'),
+  ('Redirecting...', 'Redirigiendo...'),
+  ('Error: Could not save the record. Please try again.', 'Error: no se pudo guardar el registro. Intente de nuevo.'),
+  ('Error: Missing required data (PID or Encounter)', 'Error: faltan datos obligatorios (PID o visita)');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_fix_lang t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE BINARY c.constant_name = BINARY t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang t ON BINARY c.constant_name = BINARY t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_fix_lang t
+JOIN lang_constants c ON BINARY c.constant_name = BINARY t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang;
