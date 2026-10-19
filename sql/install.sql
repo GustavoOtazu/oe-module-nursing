@@ -1079,6 +1079,8 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('No vital signs recorded in the first 24 h of the admission', 'No hay signos vitales registrados en las primeras 24 h de la internación'),
   ('Show values (%d)', 'Ver valores (%d)'),
   ('No data', 'Sin datos'),
+  ('These variables add 0 points, so the real score may be higher.', 'Esas variables suman 0 puntos, así que el puntaje real puede ser mayor.'),
+  ('Temp.', 'Temp.'),
   ('No data for', 'Sin datos de'),
   ('These systems add 0 points, so the real score may be higher.', 'Esos sistemas suman 0 puntos, así que el puntaje real puede ser mayor.'),
   ('Respiratory (SOFA system)', 'Respiratorio'),

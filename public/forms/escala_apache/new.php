@@ -207,6 +207,23 @@ $numInput = static function (string $name, string $label, string $unit, string $
         .apache-form .form-section.oxygen-section { border-left-color: #16a085; }
         .apache-form .form-section.neuro-section  { border-left-color: #e74c3c; background: rgba(231, 76, 60, 0.08); }
         .apache-form .form-section.chronic-section { border-left-color: #8e44ad; }
+        /* Section badge and summary chips: points coloured by severity, or "No data"
+           with a dashed outline (and a grey section bar) when nothing is entered. */
+        .apache-form .section-title { display: flex; justify-content: space-between; align-items: center; }
+        .apache-form .sub-badge {
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            min-width: 96px; padding: 3px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; border: 1px solid transparent;
+        }
+        .apache-form .sub-badge.no-data  { border: 1px dashed rgba(128, 128, 128, 0.6); font-weight: 500; opacity: 0.8; }
+        .apache-form .pts-0    { background: rgba(40, 167, 69, 0.20); }
+        .apache-form .pts-mid  { background: rgba(255, 193, 7, 0.28); }
+        .apache-form .pts-high { background: rgba(220, 53, 69, 0.28); }
+        .apache-form .sub-badge[title]:not([title=""]) { cursor: help; }
+        .apache-form .form-section.no-data { border-left-color: rgba(128, 128, 128, 0.45); }
+        .apache-form .apache-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+        .apache-form .apache-chip { font-size: 12px; padding: 2px 9px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.35); }
+        .apache-form .apache-chip.no-data { border-style: dashed; opacity: 0.7; }
         .apache-form .radio-group { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 12px; }
         .apache-form .radio-group label { display: flex; align-items: center; gap: 6px; cursor: pointer; min-width: 200px; }
         .apache-form .check-label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -275,7 +292,10 @@ $numInput = static function (string $name, string $label, string $unit, string $
 
         <!-- VITAL SIGNS -->
         <div class="form-section">
-            <h6 class="font-weight-bold"><?php echo xlt('Vital signs'); ?></h6>
+            <div class="section-title mb-2">
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Vital signs'); ?></h6>
+                <span class="sub-badge" id="sub_vitals"></span>
+            </div>
             <div class="row">
                 <?php
                 $numInput('temperatura', xl('Rectal temperature'), '°C', $vals['temperatura'], '20', '45', '0.1');
@@ -288,7 +308,10 @@ $numInput = static function (string $name, string $label, string $unit, string $
 
         <!-- OXYGENATION -->
         <div class="form-section oxygen-section">
-            <h6 class="font-weight-bold"><?php echo xlt('Oxygenation'); ?></h6>
+            <div class="section-title mb-2">
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Oxygenation'); ?></h6>
+                <span class="sub-badge" id="sub_oxy"></span>
+            </div>
             <div class="row">
                 <?php
                 $numInput('fio2', 'FiO2', '', $vals['fio2'], '0.21', '100', 'any', xl('Fraction (0.21-1) or percentage (21-100)'));
@@ -301,7 +324,10 @@ $numInput = static function (string $name, string $label, string $unit, string $
 
         <!-- ACID-BASE -->
         <div class="form-section">
-            <h6 class="font-weight-bold"><?php echo xlt('Acid-base'); ?></h6>
+            <div class="section-title mb-2">
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Acid-base'); ?></h6>
+                <span class="sub-badge" id="sub_acid"></span>
+            </div>
             <div class="row">
                 <?php
                 $numInput('ph', xl('Arterial pH'), '', $vals['ph'], '6.5', '8', '0.01');
@@ -312,7 +338,10 @@ $numInput = static function (string $name, string $label, string $unit, string $
 
         <!-- LABORATORY -->
         <div class="form-section">
-            <h6 class="font-weight-bold"><?php echo xlt('Laboratory'); ?></h6>
+            <div class="section-title mb-2">
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Laboratory'); ?></h6>
+                <span class="sub-badge" id="sub_lab"></span>
+            </div>
             <div class="row">
                 <?php
                 $numInput('sodio', xl('Sodium'), 'mmol/L', $vals['sodio'], '80', '220', '0.1');
@@ -338,7 +367,10 @@ $numInput = static function (string $name, string $label, string $unit, string $
 
         <!-- NEUROLOGICAL -->
         <div class="form-section neuro-section">
-            <h6 class="font-weight-bold"><?php echo xlt('Neurological'); ?></h6>
+            <div class="section-title mb-2">
+                <h6 class="font-weight-bold mb-0"><?php echo xlt('Neurological'); ?></h6>
+                <span class="sub-badge" id="sub_neuro"></span>
+            </div>
             <div class="row">
                 <?php
                 $numInput('glasgow', xl('Glasgow Coma Scale'), '3-15', $vals['glasgow'], '3', '15', '1', '');
@@ -384,6 +416,8 @@ $numInput = static function (string $name, string $label, string $unit, string $
                 &nbsp;|&nbsp; <?php echo xlt('Chronic health points'); ?>: <span id="apacheCronicos">0</span>
                 <span id="apacheAado2Wrap" style="display:none;">&nbsp;|&nbsp; A-aDO2: <span id="apacheAado2"></span> mmHg</span>
             </small>
+            <div class="apache-chips" id="apacheChips"></div>
+            <div class="small mb-1" id="apacheMissing" hidden><i class="fa fa-exclamation-triangle mr-1"></i><span></span></div>
             <div><small class="text-muted">0-14: <?php echo xlt('Lower severity'); ?> &nbsp;|&nbsp; 15-24: <?php echo xlt('Moderate severity'); ?> &nbsp;|&nbsp; ≥25: <?php echo xlt('Higher severity'); ?></small></div>
         </div>
 
@@ -421,6 +455,93 @@ $numInput = static function (string $name, string $label, string $unit, string $
         warning: <?php echo js_escape(xl('Moderate severity')); ?>,
         danger:  <?php echo js_escape(xl('Higher severity')); ?>
     };
+    var TXT = {
+        noData: <?php echo js_escape(xl('No data')); ?>,
+        point: <?php echo js_escape(xl('point')); ?>,
+        points: <?php echo js_escape(xl('points')); ?>,
+        missing: <?php echo js_escape(xl('No data for')); ?>,
+        missingNote: <?php echo js_escape(xl('These variables add 0 points, so the real score may be higher.')); ?>
+    };
+    // Short names of the 12 physiological variables, in the order of calculate()'s detail.
+    var VARS = [
+        <?php echo js_escape(xl('Temp.')); ?>,
+        <?php echo js_escape(xl('MAP')); ?>,
+        <?php echo js_escape(xl('HR')); ?>,
+        <?php echo js_escape(xl('RR')); ?>,
+        <?php echo js_escape(xl('Oxygenation')); ?>,
+        'pH/HCO3',
+        <?php echo js_escape(xl('Sodium')); ?>,
+        <?php echo js_escape(xl('Potassium')); ?>,
+        <?php echo js_escape(xl('Creatinine')); ?>,
+        <?php echo js_escape(xl('Hematocrit')); ?>,
+        <?php echo js_escape(xl('White blood cells')); ?>,
+        'Glasgow'
+    ];
+    // Form sections and the variables (indexes in VARS) each one holds.
+    var SECTIONS = {
+        sub_vitals: [0, 1, 2, 3],
+        sub_oxy: [4],
+        sub_acid: [5],
+        sub_lab: [6, 7, 8, 9, 10],
+        sub_neuro: [11]
+    };
+
+    function ptsClass(p) {
+        return p === 0 ? 'pts-0' : (p <= 2 ? 'pts-mid' : 'pts-high');
+    }
+
+    function pointsText(p) {
+        return p + ' ' + (p === 1 ? TXT.point : TXT.points);
+    }
+
+    // Section badges, summary chips and the list of variables without data.
+    function showStatus(detail) {
+        Object.keys(SECTIONS).forEach(function (id) {
+            var el = document.getElementById(id);
+            var section = el.closest('.form-section');
+            var idx = SECTIONS[id];
+            var scored = idx.filter(function (i) { return detail[i] !== null; });
+            var lacking = idx.filter(function (i) { return detail[i] === null; }).map(function (i) { return VARS[i]; });
+            el.classList.remove('no-data', 'pts-0', 'pts-mid', 'pts-high');
+            el.textContent = '';
+            if (scored.length === 0) {
+                var icon = document.createElement('i');
+                icon.className = 'fa fa-minus-circle';
+                el.appendChild(icon);
+                el.appendChild(document.createTextNode(TXT.noData));
+                el.classList.add('no-data');
+                section.classList.add('no-data');
+            } else {
+                var sum = 0, worst = 0;
+                scored.forEach(function (i) { sum += detail[i]; worst = Math.max(worst, detail[i]); });
+                el.textContent = pointsText(sum) + (lacking.length ? ' · ' + scored.length + '/' + idx.length : '');
+                el.classList.add(ptsClass(worst));
+                section.classList.remove('no-data');
+            }
+            el.title = lacking.length ? TXT.noData + ': ' + lacking.join(', ') : '';
+        });
+
+        var chips = document.getElementById('apacheChips');
+        var missing = [];
+        chips.textContent = '';
+        detail.forEach(function (p, i) {
+            var chip = document.createElement('span');
+            chip.className = 'apache-chip';
+            if (p === null) {
+                missing.push(VARS[i]);
+                chip.classList.add('no-data');
+                chip.textContent = VARS[i] + ': —';
+            } else {
+                chip.classList.add(ptsClass(p));
+                chip.textContent = VARS[i] + ': ' + p;
+            }
+            chips.appendChild(chip);
+        });
+        var box = document.getElementById('apacheMissing');
+        box.hidden = missing.length === 0;
+        box.querySelector('span').textContent = missing.length === 0 ? ''
+            : TXT.missing + ' ' + missing.join(', ') + '. ' + TXT.missingNote;
+    }
 
     // Mirrors OpenEMR\Modules\Nursing\Scoring\Num::parse()
     function parseNum(value) {
@@ -516,6 +637,7 @@ $numInput = static function (string $name, string $label, string $unit, string $
         detail.forEach(function (p) {
             if (p !== null) { physiology += p; evaluated++; }
         });
+        showStatus(detail);
         var tipo = document.querySelector('input[name="tipo_ingreso"]:checked');
         var agePts = age(val('edad'));
         var chronicPts = chronicHealth(document.getElementById('enfermedad_cronica').checked, tipo ? tipo.value : '');
