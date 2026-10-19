@@ -413,6 +413,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
 // Preview only: save.php recalculates with the PHP class.
 var SOFA_TXT = {
     notEvaluated: <?php echo js_escape(xl('Not evaluated')); ?>,
+    point: <?php echo js_escape(xl('point')); ?>,
     points: <?php echo js_escape(xl('points')); ?>,
     low: <?php echo js_escape(xl('Low')); ?>,
     intermediate: <?php echo js_escape(xl('Intermediate')); ?>,
@@ -507,7 +508,7 @@ function setSubBadge(id, score) {
         el.textContent = SOFA_TXT.notEvaluated;
         el.classList.remove('scored');
     } else {
-        el.textContent = score + ' ' + SOFA_TXT.points;
+        el.textContent = score + ' ' + (score === 1 ? SOFA_TXT.point : SOFA_TXT.points);
         el.classList.add('scored');
     }
 }

@@ -38,13 +38,13 @@ final class PrefillOptions
             <ul class="prefill-list list-unstyled small mb-0" hidden>
                 <?php foreach ($options as $o) : ?>
                 <li>
-                    <button type="button" class="prefill-pick btn btn-link btn-sm p-0 text-left<?php echo $o['proposed'] ? ' font-weight-bold' : ''; ?>"
+                    <button type="button" class="prefill-pick btn btn-link btn-sm p-0 text-left text-nowrap<?php echo $o['proposed'] ? ' font-weight-bold' : ''; ?>"
                             data-value="<?php echo attr($o['value']); ?>"
                             data-note="<?php echo attr(xl('Chosen by the user') . ': ' . $o['source'] . ', ' . $o['when']); ?>">
                         <?php echo text($o['when'] . ' · ' . $o['source'] . ' · ' . $o['value'] . ' · '
                             . $o['points'] . ' ' . ($o['points'] === 1 ? xl('point') : xl('points'))); ?>
                         <?php if ($o['proposed']) : ?><span class="badge badge-primary"><?php echo xlt('Proposed'); ?></span><?php endif; ?>
-                        <?php if ($o['latest']) : ?><span class="badge badge-secondary"><?php echo xlt('Latest'); ?></span><?php endif; ?>
+                        <?php if ($o['latest']) : ?><span class="badge badge-info"><?php echo xlt('Latest'); ?></span><?php endif; ?>
                     </button>
                 </li>
                 <?php endforeach; ?>
