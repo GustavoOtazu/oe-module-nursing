@@ -49,6 +49,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         .vs-chart { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 8px; padding: 10px; margin-bottom: 16px; }
         .vs-chart h6 { margin-bottom: 6px; }
         .vs-canvas { position: relative; height: 240px; }
+        .vs-nodata { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
     </style>
 </head>
 <body class="body_top">
@@ -116,7 +117,8 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         systolic: <?php echo js_escape(xl('Systolic')); ?>,
         diastolic: <?php echo js_escape(xl('Diastolic')); ?>,
         noAdmissions: <?php echo js_escape(xl('There are no patients admitted.')); ?>,
-        loadError: <?php echo js_escape(xl('The data could not be loaded.')); ?>
+        loadError: <?php echo js_escape(xl('The data could not be loaded.')); ?>,
+        noData: <?php echo js_escape(xl('No data in this period')); ?>
     };
     var STALE_HOURS = 6;
     var admissions = [];
@@ -243,9 +245,19 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     }
 
     function lineChart(id, datasets, opts) {
-        if (charts[id]) { charts[id].destroy(); }
+        if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+        var canvas = document.getElementById(id);
+        var box = canvas.parentNode;
+        var old = box.querySelector('.vs-nodata');
+        if (old) { old.remove(); }
+        var points = datasets.reduce(function (n, d) { return n + d.data.length; }, 0);
+        canvas.hidden = points === 0;
+        if (points === 0) {
+            box.appendChild(el('div', 'vs-nodata', TXT.noData));
+            return;
+        }
         var color = getComputedStyle(document.body).color;
-        charts[id] = new Chart(document.getElementById(id), {
+        charts[id] = new Chart(canvas, {
             type: 'line',
             data: { datasets: datasets },
             options: {

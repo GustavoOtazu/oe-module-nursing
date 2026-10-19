@@ -1082,6 +1082,7 @@ INSERT INTO nursing_uti_lang (cn, es) VALUES
   ('Vital Signs Dashboard', 'Tablero de signos vitales'),
   ('%s h ago', 'hace %s h'),
   ('%s days ago', 'hace %s días'),
+  ('No data in this period', 'Sin datos en este período'),
   ('7 days', '7 días'),
   ('Whole admission', 'Toda la internación'),
   ('Admission not found', 'Internación no encontrada'),
