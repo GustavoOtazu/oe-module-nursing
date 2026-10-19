@@ -176,12 +176,21 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .sofa-form .section-title { display: flex; justify-content: space-between; align-items: center; }
+        /* Per-system badge: points coloured by severity, or "No data" with a dashed
+           outline (and a grey section bar) when the system cannot be scored. */
         .sofa-form .sub-badge {
-            display: inline-block; min-width: 110px; text-align: center;
-            padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
-            background: rgba(128, 128, 128, 0.15);
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+            min-width: 96px; padding: 3px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; border: 1px solid transparent;
         }
-        .sofa-form .sub-badge.scored { background: rgba(52, 152, 219, 0.20); }
+        .sofa-form .sub-badge.no-data  { border: 1px dashed rgba(128, 128, 128, 0.6); font-weight: 500; opacity: 0.8; cursor: help; }
+        .sofa-form .sub-badge.pts-0    { background: rgba(40, 167, 69, 0.20); }
+        .sofa-form .sub-badge.pts-mid  { background: rgba(255, 193, 7, 0.28); }
+        .sofa-form .sub-badge.pts-high { background: rgba(220, 53, 69, 0.28); }
+        .sofa-form .form-section.no-data { border-left-color: rgba(128, 128, 128, 0.45); }
+        .sofa-form .sofa-systems { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+        .sofa-form .sofa-chip { font-size: 12px; padding: 2px 9px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.35); }
+        .sofa-form .sofa-chip.no-data { border-style: dashed; opacity: 0.7; }
         .sofa-form .field-hint { font-size: 11px; opacity: 0.75; }
         .sofa-form .prefill-hint { display: block; color: #0d6efd; opacity: 0.9; }
         .sofa-form .sofa-summary {
@@ -389,6 +398,8 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         <div class="sofa-summary" id="sofaSummary">
             <div class="sofa-total">SOFA: <span id="sofaTotal">0</span>/24 <small id="sofaLevel"></small></div>
             <small>(<span id="sofaEvaluated">0</span>/6 <?php echo xlt('systems evaluated'); ?>)</small>
+            <div class="sofa-systems" id="sofaSystems"></div>
+            <div class="small mt-1" id="sofaMissing" hidden><i class="fa fa-exclamation-triangle mr-1"></i><span></span></div>
             <div class="field-hint mt-1">
                 0-6: <?php echo xlt('Low'); ?> &nbsp;|&nbsp; 7-11: <?php echo xlt('Intermediate'); ?> &nbsp;|&nbsp; ≥12: <?php echo xlt('High'); ?>
                 &nbsp;—&nbsp; Vincent et al., 1996
@@ -425,6 +436,25 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
 // Preview only: save.php recalculates with the PHP class.
 var SOFA_TXT = {
     notEvaluated: <?php echo js_escape(xl('Not evaluated')); ?>,
+    noData: <?php echo js_escape(xl('No data')); ?>,
+    missing: <?php echo js_escape(xl('No data for')); ?>,
+    missingNote: <?php echo js_escape(xl('These systems add 0 points, so the real score may be higher.')); ?>,
+    systems: {
+        sub_resp: <?php echo js_escape(xl('Respiratory')); ?>,
+        sub_coag: <?php echo js_escape(xl('Coagulation')); ?>,
+        sub_hepatico: <?php echo js_escape(xl('Liver')); ?>,
+        sub_cardio: <?php echo js_escape(xl('Cardiovascular')); ?>,
+        sub_snc: <?php echo js_escape(xl('CNS')); ?>,
+        sub_renal: <?php echo js_escape(xl('Renal')); ?>
+    },
+    needs: {
+        sub_resp: <?php echo js_escape(xl('Enter PaO2 and FiO2 to evaluate this system')); ?>,
+        sub_coag: <?php echo js_escape(xl('Enter the platelets to evaluate this system')); ?>,
+        sub_hepatico: <?php echo js_escape(xl('Enter the bilirubin to evaluate this system')); ?>,
+        sub_cardio: <?php echo js_escape(xl('Enter the MAP or the vasopressor doses to evaluate this system')); ?>,
+        sub_snc: <?php echo js_escape(xl('Enter the Glasgow score to evaluate this system')); ?>,
+        sub_renal: <?php echo js_escape(xl('Enter the creatinine or the urine output to evaluate this system')); ?>
+    },
     point: <?php echo js_escape(xl('point')); ?>,
     points: <?php echo js_escape(xl('points')); ?>,
     low: <?php echo js_escape(xl('Low')); ?>,
@@ -516,12 +546,23 @@ var SofaCalc = {
 
 function setSubBadge(id, score) {
     var el = document.getElementById(id);
+    var section = el.closest('.form-section');
+    el.classList.remove('no-data', 'pts-0', 'pts-mid', 'pts-high');
+    el.textContent = '';
     if (score === null) {
-        el.textContent = SOFA_TXT.notEvaluated;
-        el.classList.remove('scored');
+        // The system adds 0 points because it has no data, not because it is normal.
+        var icon = document.createElement('i');
+        icon.className = 'fa fa-minus-circle';
+        el.appendChild(icon);
+        el.appendChild(document.createTextNode(SOFA_TXT.noData));
+        el.classList.add('no-data');
+        el.title = SOFA_TXT.needs[id];
+        section.classList.add('no-data');
     } else {
         el.textContent = score + ' ' + (score === 1 ? SOFA_TXT.point : SOFA_TXT.points);
-        el.classList.add('scored');
+        el.classList.add(score === 0 ? 'pts-0' : (score <= 2 ? 'pts-mid' : 'pts-high'));
+        el.title = '';
+        section.classList.remove('no-data');
     }
 }
 
@@ -544,13 +585,29 @@ function calcularSofa() {
     };
     var total = 0;
     var evaluated = 0;
+    var missing = [];
+    var chips = document.getElementById('sofaSystems');
+    chips.textContent = '';
     Object.keys(scores).forEach(function (key) {
         setSubBadge(key, scores[key]);
+        var chip = document.createElement('span');
+        chip.className = 'sofa-chip';
         if (scores[key] !== null) {
             total += scores[key];
             evaluated++;
+            chip.textContent = SOFA_TXT.systems[key] + ': ' + scores[key];
+        } else {
+            missing.push(SOFA_TXT.systems[key]);
+            chip.classList.add('no-data');
+            chip.title = SOFA_TXT.needs[key];
+            chip.textContent = SOFA_TXT.systems[key] + ': —';
         }
+        chips.appendChild(chip);
     });
+    var missingBox = document.getElementById('sofaMissing');
+    missingBox.hidden = missing.length === 0;
+    missingBox.querySelector('span').textContent = missing.length === 0 ? ''
+        : SOFA_TXT.missing + ' ' + missing.join(', ') + '. ' + SOFA_TXT.missingNote;
     document.getElementById('pafi_preview').textContent = (pafi === null) ? '—' : String(pafi);
     document.getElementById('sofaTotal').textContent = total;
     document.getElementById('sofaEvaluated').textContent = evaluated;
