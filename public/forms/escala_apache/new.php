@@ -290,6 +290,9 @@ $numInput = static function (string $name, string $label, string $unit, string $
     </div>
 <?php endif; ?>
 
+    <?php // Previous records of this form in the admission, like OpenEMR's vitals history.
+    \OpenEMR\Modules\Nursing\FormHistory::render('escala_apache', $pid, $encounter, $id); ?>
+
     <form method="POST" action="<?php echo attr($save_url); ?>" id="formEscalaApache" onsubmit="top.restoreSession();">
         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>">
         <input type="hidden" name="pid"       value="<?php echo attr((string)$pid); ?>">
