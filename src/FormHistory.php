@@ -3,7 +3,7 @@
 /**
  * Form History
  *
- * Shows, above a nursing form, the previous records of the same form in the
+ * Shows, below a nursing form, the previous records of the same form in the
  * same admission, the way OpenEMR's vitals form shows the previous takes next
  * to the new one. Each record is drawn by the form's own report function (the
  * summary OpenEMR shows in the encounter), most recent first, side by side.
@@ -64,7 +64,7 @@ final class FormHistory
         ?>
         <style>
             /* No background/colour here: inherit the active theme (light or dark). */
-            .form-history { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; }
+            .form-history { border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 6px; padding: 8px 12px; margin: 20px 0 16px; }
             .form-history > summary { cursor: pointer; font-weight: 600; }
             .form-history .fh-row { display: flex; gap: 12px; overflow-x: auto; padding: 10px 2px 4px; }
             .form-history .fh-card { flex: 0 0 380px; max-height: 420px; overflow: auto; border: 1px solid rgba(128, 128, 128, 0.35); border-radius: 6px; padding: 8px; font-size: 12px; }

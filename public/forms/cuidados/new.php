@@ -144,9 +144,6 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         </div>
     </div>
 
-    <?php // Previous records of this form in the admission, like OpenEMR's vitals history.
-    \OpenEMR\Modules\Nursing\FormHistory::render('cuidados', $pid, $encounter, $id); ?>
-
     <form method="POST" action="<?php echo attr($save_url); ?>" id="formCuidados" onsubmit="top.restoreSession();">
         <input type="hidden" name="csrf_token_form" value="<?php echo attr(CsrfUtils::collectCsrfToken(session: $session)); ?>">
         <input type="hidden" name="pid"       value="<?php echo attr((string)$pid); ?>">
@@ -228,6 +225,9 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
             </button>
         </div>
     </form>
+
+    <?php // Previous records of this form in the admission, like OpenEMR's vitals history.
+    \OpenEMR\Modules\Nursing\FormHistory::render('cuidados', $pid, $encounter, $id); ?>
 </div>
 
 <script>
