@@ -251,10 +251,7 @@ $nursing_forms = [
             <div class="col-sm-12">
                 <div class="page-header clearfix">
                     <h2><?php echo xlt('Inpatient List'); ?></h2>
-                    <button id="btn-nuevo-ingreso" class="btn btn-success btn-sm mb-2">
-                        <i class="fa fa-plus"></i>&nbsp;<?php echo xlt('New Admission'); ?>
-                    </button>
-                    <button id="btn-tablero-vitales" class="btn btn-info btn-sm mb-2 ml-1">
+                    <button id="btn-tablero-vitales" class="btn btn-info btn-sm mb-2">
                         <i class="fa fa-chart-line"></i>&nbsp;<?php echo xlt('Vital Signs Dashboard'); ?>
                     </button>
                     <br />
@@ -553,26 +550,10 @@ $nursing_forms = [
 
         $(function() {
 
-            // NEW ADMISSION — patient selector popup callback
-            window.setpatient = function(pid, lname, fname, dob) {
-                top.restoreSession();
-                top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/dashboard/editar_internado.php?pid=' + encodeURIComponent(pid);
-            };
-
             // VITAL SIGNS DASHBOARD button
             $('#btn-tablero-vitales').on('click', function() {
                 top.restoreSession();
                 top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/dashboard/tablero_vitales.php';
-            });
-
-            // NEW ADMISSION button — open patient picker as in-app dialog
-            $('#btn-nuevo-ingreso').on('click', function() {
-                top.restoreSession();
-                dlgopen(
-                    webroot_url + '/interface/main/calendar/find_patient_popup.php',
-                    'findPatientAdmission',
-                    700, 500, false, <?php echo js_escape(xlt('Select Patient')); ?>
-                );
             });
 
             // DISCHARGE button
