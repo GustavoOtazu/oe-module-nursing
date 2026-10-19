@@ -52,7 +52,7 @@ final class ClinicalPrefill
     }
 
     /**
-     * @return array<string, array{value: string, note: string}>
+     * @return array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}>
      */
     public function forApache(): array
     {
@@ -64,26 +64,26 @@ final class ClinicalPrefill
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
         $out = [];
 
-        $this->put($out, 'temperatura', $label, WorstValue::pick(
+        $this->choose($out, 'temperatura', $label,
             array_merge($this->series($vitals, 'temp_c', xl('vital signs')), $this->series($apache, 'temperatura', xl('APACHE II'))),
             static fn(array $c): ?int => ApacheIIScore::temperature($c['value'])
-        ));
-        $this->put($out, 'pam', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'pam', $label,
             array_merge($this->series($vitals, 'map', xl('vital signs')), $this->series($apache, 'pam', xl('APACHE II')), $this->series($sofa, 'pam', xl('SOFA'))),
             static fn(array $c): ?int => ApacheIIScore::meanArterialPressure($c['value'])
-        ));
-        $this->put($out, 'frecuencia_cardiaca', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'frecuencia_cardiaca', $label,
             array_merge($this->series($vitals, 'pulse', xl('vital signs')), $this->series($apache, 'frecuencia_cardiaca', xl('APACHE II'))),
             static fn(array $c): ?int => ApacheIIScore::heartRate($c['value'])
-        ));
-        $this->put($out, 'frecuencia_respiratoria', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'frecuencia_respiratoria', $label,
             array_merge(
                 $this->series($vitals, 'respiration', xl('vital signs')),
                 $this->series($this->ventilationRows($from, $to), 'frecuencia_respiratoria', xl('ventilation record')),
                 $this->series($apache, 'frecuencia_respiratoria', xl('APACHE II'))
             ),
             static fn(array $c): ?int => ApacheIIScore::respiratoryRate($c['value'])
-        ));
+        );
 
         // FiO2, PaO2 and PaCO2 come from the same blood gas, so they are chosen together.
         $gases = [];
@@ -111,32 +111,31 @@ final class ClinicalPrefill
             }
         }
 
-        $ph = WorstValue::pick($this->series($apache, 'ph', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::arterialPh($c['value']));
-        $this->put($out, 'ph', $label, $ph);
+        $ph = $this->choose($out, 'ph', $label, $this->series($apache, 'ph', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::arterialPh($c['value']));
         if ($ph === null) {
-            $this->put($out, 'bicarbonato', $label, WorstValue::pick(
+            $this->choose($out, 'bicarbonato', $label,
                 $this->series($apache, 'bicarbonato', xl('APACHE II')),
                 static fn(array $c): ?int => ApacheIIScore::bicarbonate($c['value'])
-            ));
+            );
         }
-        $this->put($out, 'sodio', $label, WorstValue::pick($this->series($apache, 'sodio', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::sodium($c['value'])));
-        $this->put($out, 'potasio', $label, WorstValue::pick($this->series($apache, 'potasio', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::potassium($c['value'])));
-        $this->put($out, 'creatinina', $label, WorstValue::pick(
+        $this->choose($out, 'sodio', $label, $this->series($apache, 'sodio', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::sodium($c['value']));
+        $this->choose($out, 'potasio', $label, $this->series($apache, 'potasio', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::potassium($c['value']));
+        $this->choose($out, 'creatinina', $label,
             array_merge($this->series($apache, 'creatinina', xl('APACHE II')), $this->series($sofa, 'creatinina', xl('SOFA'))),
             static fn(array $c): ?int => ApacheIIScore::creatinine($c['value'], false)
-        ));
-        $this->put($out, 'hematocrito', $label, WorstValue::pick($this->series($apache, 'hematocrito', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::hematocrit($c['value'])));
-        $this->put($out, 'leucocitos', $label, WorstValue::pick($this->series($apache, 'leucocitos', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::whiteBloodCells($c['value'])));
-        $this->put($out, 'glasgow', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'hematocrito', $label, $this->series($apache, 'hematocrito', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::hematocrit($c['value']));
+        $this->choose($out, 'leucocitos', $label, $this->series($apache, 'leucocitos', xl('APACHE II')), static fn(array $c): ?int => ApacheIIScore::whiteBloodCells($c['value']));
+        $this->choose($out, 'glasgow', $label,
             $this->glasgowSeries($from, $to, $apache, $sofa),
             static fn(array $c): ?int => ApacheIIScore::glasgow($c['value'])
-        ));
+        );
 
         return $out;
     }
 
     /**
-     * @return array<string, array{value: string, note: string}>
+     * @return array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}>
      */
     public function forSofa(): array
     {
@@ -182,20 +181,20 @@ final class ClinicalPrefill
             ];
         }
 
-        $this->put($out, 'plaquetas', $label, WorstValue::pick($this->series($sofa, 'plaquetas', xl('SOFA')), static fn(array $c): ?int => SofaScore::coagulation($c['value'])));
-        $this->put($out, 'bilirrubina', $label, WorstValue::pick($this->series($sofa, 'bilirrubina', xl('SOFA')), static fn(array $c): ?int => SofaScore::liver($c['value'])));
-        $this->put($out, 'pam', $label, WorstValue::pick(
+        $this->choose($out, 'plaquetas', $label, $this->series($sofa, 'plaquetas', xl('SOFA')), static fn(array $c): ?int => SofaScore::coagulation($c['value']));
+        $this->choose($out, 'bilirrubina', $label, $this->series($sofa, 'bilirrubina', xl('SOFA')), static fn(array $c): ?int => SofaScore::liver($c['value']));
+        $this->choose($out, 'pam', $label,
             array_merge($this->series($vitals, 'map', xl('vital signs')), $this->series($sofa, 'pam', xl('SOFA')), $this->series($apache, 'pam', xl('APACHE II'))),
             static fn(array $c): ?int => SofaScore::cardiovascular($c['value'], null, false, null, null)
-        ));
-        $this->put($out, 'glasgow', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'glasgow', $label,
             $this->glasgowSeries($from, $to, $apache, $sofa),
             static fn(array $c): ?int => SofaScore::cns($c['value'])
-        ));
-        $this->put($out, 'creatinina', $label, WorstValue::pick(
+        );
+        $this->choose($out, 'creatinina', $label,
             array_merge($this->series($sofa, 'creatinina', xl('SOFA')), $this->series($apache, 'creatinina', xl('APACHE II'))),
             static fn(array $c): ?int => SofaScore::renal($c['value'], null)
-        ));
+        );
 
         /** @var array<string, string|int|null>|false $urine */
         $urine = QueryUtils::querySingleRow(
@@ -393,7 +392,69 @@ final class ClinicalPrefill
     }
 
     /**
-     * @param array<string, array{value: string, note: string}> $out
+     * Proposes the worst candidate of a field (see WorstValue::pick) and keeps
+     * every candidate of the window, with its points, so the form can offer them
+     * as alternatives: the nurse may pick another one, e.g. the latest, when the
+     * worst value looks wrong.
+     *
+     * @param array<string, array<string, mixed>> $out
+     * @param list<array{value: float, time: string, source: string}> $candidates
+     * @param callable(array{value: float, time: string, source: string}): ?int $points
+     * @return array{value: float, time: string, source: string, points: int}|null
+     */
+    private function choose(array &$out, string $field, string $label, array $candidates, callable $points): ?array
+    {
+        $pick = WorstValue::pick($candidates, $points);
+        $this->put($out, $field, $label, $pick);
+        if ($pick !== null) {
+            $out[$field]['options'] = $this->options($candidates, $points, $pick);
+        }
+        return $pick;
+    }
+
+    /**
+     * Candidates of a field, worst first (ties: most recent first), marking the
+     * proposed one and the most recent one.
+     *
+     * @param list<array{value: float, time: string, source: string}> $candidates
+     * @param callable(array{value: float, time: string, source: string}): ?int $points
+     * @param array{value: float, time: string, source: string, points: int} $pick
+     * @return list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>
+     */
+    private function options(array $candidates, callable $points, array $pick): array
+    {
+        $scored = [];
+        foreach ($candidates as $c) {
+            $p = $points($c);
+            if ($p !== null) {
+                $scored[] = $c + ['points' => $p];
+            }
+        }
+        $latestTime = max(array_column($scored, 'time'));
+        usort($scored, static fn(array $a, array $b): int => [$b['points'], $b['time']] <=> [$a['points'], $a['time']]);
+
+        $out = [];
+        $proposedMarked = false;
+        $latestMarked = false;
+        foreach ($scored as $c) {
+            $proposed = !$proposedMarked && $c['time'] === $pick['time'] && $c['source'] === $pick['source'] && $c['value'] === $pick['value'];
+            $latest = !$latestMarked && $c['time'] === $latestTime;
+            $proposedMarked = $proposedMarked || $proposed;
+            $latestMarked = $latestMarked || $latest;
+            $out[] = [
+                'value' => $this->fmt($c['value']),
+                'when' => $this->when($c['time']),
+                'source' => $c['source'],
+                'points' => $c['points'],
+                'proposed' => $proposed,
+                'latest' => $latest,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $out
      * @param array{value: float, time: string, source: string, points: int}|null $pick
      */
     private function put(array &$out, string $field, string $label, ?array $pick): void

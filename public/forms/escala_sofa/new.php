@@ -24,6 +24,7 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
+use OpenEMR\Modules\Nursing\Prefill\PrefillOptions;
 use OpenEMR\Modules\Nursing\VitalsLink;
 
 $session   = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -65,7 +66,7 @@ $creatinina           = '';
 $diuresis_24h         = '';
 $hora_registro        = '';
 $observaciones        = '';
-/** @var array<string, array{value: string, note: string}> $prefill */
+/** @var array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}> $prefill */
 $prefill              = [];
 $missingVitals        = false;
 
@@ -118,6 +119,8 @@ $hint = static function (string $field) use ($prefill): void {
     }
     echo '<span class="field-hint prefill-hint"><i class="fa fa-history mr-1"></i>'
         . text($prefill[$field]['note']) . ' — ' . xlt('Review before saving') . '</span>';
+    // Other values of the window, to pick a different one than the proposed worst.
+    PrefillOptions::render($prefill, $field);
 };
 
 $page_title = $is_edit ? xlt('Edit SOFA Score') : xlt('New SOFA Score');
@@ -574,5 +577,6 @@ document.addEventListener('DOMContentLoaded', function () {
     calcularSofa();
 });
 </script>
+<?php PrefillOptions::script(); ?>
 </body>
 </html>

@@ -24,6 +24,7 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\Prefill\ClinicalPrefill;
+use OpenEMR\Modules\Nursing\Prefill\PrefillOptions;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 use OpenEMR\Modules\Nursing\VitalsLink;
 
@@ -75,7 +76,7 @@ $enfermedad_cronica        = 0;
 $tipo_ingreso              = '';
 $hora_registro             = '';
 $observaciones             = '';
-/** @var array<string, array{value: string, note: string}> $prefill */
+/** @var array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}> $prefill */
 $prefill                   = [];
 $missingVitals             = false;
 
@@ -154,6 +155,7 @@ $numInput = static function (string $name, string $label, string $unit, string $
         <?php endif; ?>
         <?php if (isset($prefill[$name])) : ?>
         <small class="form-text prefill-hint"><i class="fa fa-history mr-1"></i><?php echo text($prefill[$name]['note']); ?> — <?php echo xlt('Review before saving'); ?></small>
+            <?php PrefillOptions::render($prefill, $name); ?>
         <?php endif; ?>
     </div>
     <?php
@@ -535,5 +537,6 @@ $numInput = static function (string $name, string $label, string $unit, string $
     });
 })();
 </script>
+<?php PrefillOptions::script(); ?>
 </body>
 </html>
