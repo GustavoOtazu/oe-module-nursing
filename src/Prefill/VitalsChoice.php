@@ -28,34 +28,65 @@ use OpenEMR\Modules\Nursing\Scoring\WorstValue;
 final class VitalsChoice
 {
     /**
-     * @param list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}> $takes
+     * @param list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}> $takes
      * @param array<string, string> $fields take key (map, temp_c, pulse, respiration) => form input id
+     * @param int|null $selectedId take saved with the record being edited (0: it has none); null for a new record (the worst is preselected)
      */
-    public static function render(array $takes, array $fields): void
+    public static function render(array $takes, array $fields, ?int $selectedId = null): void
     {
         if ($takes === []) {
             return;
         }
+        // APACHE II uses rectal temperature: warn when the chosen take's is not.
+        $checksTemperature = isset($fields['temp_c']);
         ?>
         <div class="form-group vitals-choice" data-fields="<?php echo attr((string) json_encode($fields)); ?>">
             <label for="vitals_id" class="font-weight-bold"><i class="fa fa-heartbeat mr-1"></i><?php echo xlt('Vital signs take'); ?></label>
             <select name="vitals_id" id="vitals_id" class="form-control">
+                <?php if ($selectedId === 0) : ?>
+                <option value="" selected data-temp-c="">— <?php echo xlt('No linked take'); ?> —</option>
+                <?php endif; ?>
                 <?php foreach ($takes as $t) : ?>
-                <option value="<?php echo attr((string) $t['id']); ?>"<?php echo $t['worst'] ? ' selected' : ''; ?>
+                <option value="<?php echo attr((string) $t['id']); ?>"<?php echo ($selectedId === null ? $t['worst'] : $t['id'] === $selectedId) ? ' selected' : ''; ?>
                         data-when="<?php echo attr($t['when']); ?>"
+                        data-temp-method="<?php echo attr((string) $t['temp_method']); ?>"
+                        data-temp-method-label="<?php echo attr($t['temp_method'] !== null ? xl($t['temp_method']) : ''); ?>"
                         <?php foreach (['map', 'temp_c', 'pulse', 'respiration'] as $k) : ?>
                         data-<?php echo attr(str_replace('_', '-', $k)); ?>="<?php echo attr($t[$k] !== null ? self::fmt($t[$k]) : ''); ?>"
                         <?php endforeach; ?>><?php echo text(self::label($t)); ?></option>
                 <?php endforeach; ?>
             </select>
-            <small class="form-text text-muted"><?php echo xlt('The worst take of the period is preselected. The values of the chosen take fill the fields that come from vital signs, and the take is saved with this score.'); ?></small>
+            <?php if ($checksTemperature) : ?>
+            <div class="small text-warning mt-1 vitals-temp-warning" hidden><i class="fa fa-thermometer-half mr-1"></i><span></span></div>
+            <?php endif; ?>
+            <small class="form-text text-muted"><?php echo $selectedId === null
+                ? xlt('The worst take of the period is preselected. The values of the chosen take fill the fields that come from vital signs, and the take is saved with this score.')
+                : xlt('The take saved with this score is selected. Choosing another one fills the fields that come from vital signs with its values.'); ?></small>
         </div>
         <script>
         document.addEventListener('DOMContentLoaded', function () {
             var box = document.querySelector('.vitals-choice');
             var select = document.getElementById('vitals_id');
             var fields = JSON.parse(box.dataset.fields);
+            var warning = box.querySelector('.vitals-temp-warning');
+            function checkTemperature() {
+                if (!warning) {
+                    return;
+                }
+                var opt = select.options[select.selectedIndex];
+                var method = opt.dataset.tempMethod;
+                var text = '';
+                if (opt.dataset.tempC !== '' && method !== 'Rectal') {
+                    text = method
+                        ? <?php echo js_escape(xl('Temperature taken by: %s. APACHE II uses rectal temperature; review it before saving.')); ?>.replace('%s', opt.dataset.tempMethodLabel)
+                        : <?php echo js_escape(xl('The take does not say how the temperature was taken. APACHE II uses rectal temperature; review it before saving.')); ?>;
+                }
+                warning.querySelector('span').textContent = text;
+                warning.hidden = text === '';
+            }
+            checkTemperature();
             select.addEventListener('change', function () {
+                checkTemperature();
                 var opt = select.options[select.selectedIndex];
                 Object.keys(fields).forEach(function (key) {
                     var value = opt.dataset[key.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); })];
@@ -115,7 +146,7 @@ final class VitalsChoice
         }
         /** @var array<string, string|int|null>|false $r */
         $r = QueryUtils::querySingleRow(
-            "SELECT v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature
+            "SELECT v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature, v.temp_method
                FROM form_vitals v WHERE v.id = ? AND v.pid = ? LIMIT 1",
             [$vitalsId, $pid]
         );
@@ -134,11 +165,12 @@ final class VitalsChoice
             'temp_c' => WorstValue::fahrenheitToCelsius(Num::parse($r['temperature'] ?? null)),
             'pulse' => ($pulse !== null && $pulse > 0) ? $pulse : null,
             'respiration' => ($resp !== null && $resp > 0) ? $resp : null,
+            'temp_method' => trim((string) ($r['temp_method'] ?? '')) !== '' ? trim((string) $r['temp_method']) : null,
         ]);
     }
 
     /**
-     * @param array{when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points?: int, worst?: bool, latest?: bool} $t
+     * @param array{when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method?: ?string, points?: int, worst?: bool, latest?: bool} $t
      */
     private static function label(array $t): string
     {
@@ -156,7 +188,8 @@ final class VitalsChoice
             $parts[] = xl('RR') . ' ' . self::fmt($t['respiration']);
         }
         if ($t['temp_c'] !== null) {
-            $parts[] = self::fmt($t['temp_c']) . ' °C';
+            $method = $t['temp_method'] ?? null;
+            $parts[] = self::fmt($t['temp_c']) . ' °C' . ($method !== null ? ' (' . xl($method) . ')' : '');
         }
         $label = implode(' · ', $parts);
         if (isset($t['points'])) {

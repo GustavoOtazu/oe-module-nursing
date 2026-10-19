@@ -141,6 +141,13 @@ if ($is_edit) {
          WHERE id = ? AND pid = ? AND encounter = ?",
         array_merge([$user, $groupname, $authorized], $data, [$id, $pid, $encounter])
     );
+    // The take can be changed while editing, when the form offered the select.
+    if (filter_has_var(INPUT_POST, 'vitals_id')) {
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE form_escala_sofa SET vitals_id = ? WHERE id = ? AND pid = ? AND encounter = ?",
+            [VitalsChoice::postedId($pid), $id, $pid, $encounter]
+        );
+    }
 } else {
     $newid = QueryUtils::sqlInsert(
         "INSERT INTO form_escala_sofa (
@@ -166,8 +173,7 @@ if ($is_edit) {
             ?, ?,
             ?, ?
          )",
-        // The vital signs take the score was calculated with is set once, when the
-        // record is created; editing a record does not change it.
+        // The vital signs take the score was calculated with.
         array_merge([$pid, $encounter, $user, $groupname, $authorized], $data, [VitalsChoice::postedId($pid)])
     );
     (new FormService())->addForm($encounter, 'SOFA Score', (int)$newid, 'escala_sofa', $pid, $authorized);

@@ -70,9 +70,10 @@ $observaciones        = '';
 /** @var array<string, array{value: string, note: string, options?: list<array{value: string, when: string, source: string, points: int, proposed: bool, latest: bool}>}> $prefill */
 $prefill              = [];
 $missingVitals        = false;
-/** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}> $takes */
+/** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}> $takes */
 $takes                = [];
 $linkedVitals         = null;
+$savedVitalsId        = 0;
 
 if ($is_edit) {
     /** @var array<string, string|int|null>|false $row */
@@ -94,6 +95,20 @@ if ($is_edit) {
         $hora_registro        = substr((string)($row['hora_registro'] ?? ''), 0, 5);
         $observaciones        = (string)($row['observaciones'] ?? '');
         $linkedVitals         = VitalsChoice::describe((int)($row['vitals_id'] ?? 0), $pid);
+        // The takes of the window, plus the one saved with the record if it is no
+        // longer in it, so the nurse can change it; the record's values are kept.
+        $savedVitalsId = (int)($row['vitals_id'] ?? 0);
+        $prefiller = new ClinicalPrefill($pid, $encounter);
+        $prefiller->forSofa();
+        $takes = $prefiller->vitalsTakes();
+        if ($savedVitalsId > 0 && !in_array($savedVitalsId, array_column($takes, 'id'), true)) {
+            $savedTake = $prefiller->takeById('sofa', $savedVitalsId);
+            if ($savedTake !== null) {
+                array_unshift($takes, $savedTake);
+            } else {
+                $savedVitalsId = 0; // the saved take was deleted in OpenEMR
+            }
+        }
     } else {
         die(xlt("Error: Record not found or insufficient permissions."));
     }
@@ -246,8 +261,8 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         <input type="hidden" name="id" value="<?php echo attr((string)$id); ?>">
         <?php endif; ?>
 
-<?php if (!$is_edit) : ?>
-        <?php VitalsChoice::render($takes, ['map' => 'pam']); ?>
+<?php if ($takes !== []) : ?>
+        <?php VitalsChoice::render($takes, ['map' => 'pam'], $is_edit ? $savedVitalsId : null); ?>
 <?php elseif ($linkedVitals !== null) : ?>
         <p class="small text-muted"><i class="fa fa-heartbeat mr-1"></i><?php echo xlt('Vital signs take used'); ?>: <?php echo text($linkedVitals); ?></p>
 <?php endif; ?>

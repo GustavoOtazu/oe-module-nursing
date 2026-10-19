@@ -36,7 +36,7 @@ final class ClinicalPrefill
     /** Vital signs found in the window of the last forApache()/forSofa() call. */
     private int $vitalsFound = 0;
 
-    /** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}> */
+    /** @var list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}> */
     private array $takes = [];
 
     public function __construct(
@@ -60,11 +60,77 @@ final class ClinicalPrefill
      * fields that come from vital signs; the form lets the nurse pick another one
      * and saves the id of the chosen take with the score.
      *
-     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}>
+     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}>
      */
     public function vitalsTakes(): array
     {
         return $this->takes;
+    }
+
+    /**
+     * Points a vital signs take adds to SOFA: only its mean arterial pressure is
+     * used (cardiovascular system, without vasopressors). Null when it has none.
+     *
+     * @param array{map: ?float} $take
+     */
+    public static function sofaTakePoints(array $take): ?int
+    {
+        return SofaScore::cardiovascular($take['map'], null, false, null, null);
+    }
+
+    /**
+     * Points a vital signs take adds to APACHE II: temperature, mean arterial
+     * pressure, heart rate and respiratory rate. Null when it has none of them.
+     *
+     * @param array{temp_c: ?float, map: ?float, pulse: ?float, respiration: ?float} $take
+     */
+    public static function apacheTakePoints(array $take): ?int
+    {
+        $parts = array_filter([
+            ApacheIIScore::temperature($take['temp_c']),
+            ApacheIIScore::meanArterialPressure($take['map']),
+            ApacheIIScore::heartRate($take['pulse']),
+            ApacheIIScore::respiratoryRate($take['respiration']),
+        ], static fn(?int $p): bool => $p !== null);
+        return $parts === [] ? null : array_sum($parts);
+    }
+
+    /**
+     * One saved take of this patient, scored for the given scale ('sofa' or
+     * 'apache'), so a record being edited can show the take it was saved with
+     * even when it is no longer in the scale's window.
+     *
+     * @return array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}|null
+     */
+    public function takeById(string $scale, int $vitalsId): ?array
+    {
+        /** @var array<string, string|int|null>|false $r */
+        $r = QueryUtils::querySingleRow(
+            "SELECT v.id, v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature, v.temp_method
+               FROM form_vitals v
+               JOIN forms f ON f.form_id = v.id AND f.formdir = 'vitals' AND f.deleted = 0
+              WHERE v.id = ? AND v.pid = ? LIMIT 1",
+            [$vitalsId, $this->pid]
+        );
+        if ($r === false) {
+            return null;
+        }
+        $v = self::vitalRow($r);
+        $points = $scale === 'apache' ? self::apacheTakePoints($v) : self::sofaTakePoints($v);
+        return [
+            'id' => $v['id'],
+            'when' => $this->when($v['date']),
+            'bps' => $v['bps'],
+            'bpd' => $v['bpd'],
+            'map' => $v['map'],
+            'temp_c' => $v['temp_c'],
+            'pulse' => $v['pulse'],
+            'respiration' => $v['respiration'],
+            'temp_method' => $v['temp_method'],
+            'points' => $points ?? 0,
+            'worst' => false,
+            'latest' => false,
+        ];
     }
 
     /**
@@ -78,15 +144,7 @@ final class ClinicalPrefill
         $this->vitalsFound = count($vitals);
         // Vital signs are chosen as a whole take (see vitalsTakes()); the other
         // sources are only used for a variable when no take has it.
-        $this->takes = $this->takes($vitals, static function (array $v): ?int {
-            $parts = array_filter([
-                ApacheIIScore::temperature($v['temp_c']),
-                ApacheIIScore::meanArterialPressure($v['map']),
-                ApacheIIScore::heartRate($v['pulse']),
-                ApacheIIScore::respiratoryRate($v['respiration']),
-            ], static fn(?int $p): bool => $p !== null);
-            return $parts === [] ? null : array_sum($parts);
-        });
+        $this->takes = $this->takes($vitals, self::apacheTakePoints(...));
         $vitalsForChoice = $this->takes === [] ? $vitals : [];
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
@@ -175,7 +233,7 @@ final class ClinicalPrefill
         $this->vitalsFound = count($vitals);
         // Vital signs are chosen as a whole take (see vitalsTakes()); SOFA only
         // uses their mean arterial pressure.
-        $this->takes = $this->takes($vitals, static fn(array $v): ?int => SofaScore::cardiovascular($v['map'], null, false, null, null));
+        $this->takes = $this->takes($vitals, self::sofaTakePoints(...));
         $vitalsForChoice = $this->takes === [] ? $vitals : [];
         $apache = $this->moduleRows('form_escala_apache', 'escala_apache', $from, $to);
         $sofa = $this->moduleRows('form_escala_sofa', 'escala_sofa', $from, $to);
@@ -348,31 +406,42 @@ final class ClinicalPrefill
     {
         /** @var list<array<string, string|int|null>> $rows */
         $rows = QueryUtils::fetchRecords(
-            "SELECT v.id, v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature
+            // Only the takes recorded in this admission (the vitals button of the
+            // module opens OpenEMR's vitals form in it), not those of other visits.
+            "SELECT v.id, v.date, v.bps, v.bpd, v.pulse, v.respiration, v.temperature, v.temp_method
                FROM form_vitals v
                JOIN forms f ON f.form_id = v.id AND f.formdir = 'vitals' AND f.deleted = 0
-              WHERE v.pid = ? AND v.date >= ? AND v.date <= ?
+              WHERE v.pid = ? AND f.encounter = ? AND v.date >= ? AND v.date <= ?
               ORDER BY v.date",
-            [$this->pid, $from, $to]
+            [$this->pid, $this->encounter, $from, $to]
         );
-        $out = [];
-        foreach ($rows as $r) {
-            $pulse = Num::parse($r['pulse'] ?? null);
-            $respiration = Num::parse($r['respiration'] ?? null);
-            $bps = Num::parse($r['bps'] ?? null);
-            $bpd = Num::parse($r['bpd'] ?? null);
-            $out[] = [
-                'id' => (int) $r['id'],
-                'date' => (string) $r['date'],
-                'bps' => ($bps !== null && $bps > 0) ? $bps : null,
-                'bpd' => ($bpd !== null && $bpd > 0) ? $bpd : null,
-                'temp_c' => WorstValue::fahrenheitToCelsius(Num::parse($r['temperature'] ?? null)),
-                'map' => WorstValue::meanArterialPressure(Num::parse($r['bps'] ?? null), Num::parse($r['bpd'] ?? null)),
-                'pulse' => ($pulse !== null && $pulse > 0) ? $pulse : null,
-                'respiration' => ($respiration !== null && $respiration > 0) ? $respiration : null,
-            ];
-        }
-        return $out;
+        return array_map(self::vitalRow(...), $rows);
+    }
+
+    /**
+     * A form_vitals row in the units the scales use (zeros are empty fields).
+     *
+     * @param array<string, string|int|null> $r
+     * @return array{id: int, date: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string}
+     */
+    private static function vitalRow(array $r): array
+    {
+        $positive = static function (mixed $raw): ?float {
+            $n = Num::parse($raw);
+            return ($n !== null && $n > 0) ? $n : null;
+        };
+        $method = trim((string) ($r['temp_method'] ?? ''));
+        return [
+            'id' => (int) $r['id'],
+            'date' => (string) $r['date'],
+            'bps' => $positive($r['bps'] ?? null),
+            'bpd' => $positive($r['bpd'] ?? null),
+            'map' => WorstValue::meanArterialPressure(Num::parse($r['bps'] ?? null), Num::parse($r['bpd'] ?? null)),
+            'temp_c' => WorstValue::fahrenheitToCelsius(Num::parse($r['temperature'] ?? null)),
+            'pulse' => $positive($r['pulse'] ?? null),
+            'respiration' => $positive($r['respiration'] ?? null),
+            'temp_method' => $method !== '' ? $method : null,
+        ];
     }
 
     /** @return list<array<string, string|int|null>> */
@@ -438,7 +507,7 @@ final class ClinicalPrefill
      *
      * @param list<array<string, mixed>> $vitals
      * @param callable(array<string, mixed>): ?int $points
-     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, points: int, worst: bool, latest: bool}>
+     * @return list<array{id: int, when: string, bps: ?float, bpd: ?float, map: ?float, temp_c: ?float, pulse: ?float, respiration: ?float, temp_method: ?string, points: int, worst: bool, latest: bool}>
      */
     private function takes(array $vitals, callable $points): array
     {
@@ -465,6 +534,7 @@ final class ClinicalPrefill
                 'temp_c' => $v['temp_c'],
                 'pulse' => $v['pulse'],
                 'respiration' => $v['respiration'],
+                'temp_method' => $v['temp_method'],
                 'points' => (int) $v['points'],
                 'worst' => $worst !== null && (int) $v['id'] === (int) $worst['id'],
                 'latest' => $i === 0,

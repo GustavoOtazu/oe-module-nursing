@@ -164,9 +164,15 @@ if ($is_edit) {
             [$id, $pid, $encounter]
         )
     );
+    // The take can be changed while editing, when the form offered the select.
+    if (filter_has_var(INPUT_POST, 'vitals_id')) {
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE form_escala_apache SET vitals_id = ? WHERE id = ? AND pid = ? AND encounter = ?",
+            [VitalsChoice::postedId($pid), $id, $pid, $encounter]
+        );
+    }
 } else {
-    // The vital signs take the score was calculated with is set once, when the
-    // record is created; editing a record does not change it.
+    // The vital signs take the score was calculated with.
     $data['vitals_id'] = VitalsChoice::postedId($pid);
     $columns = array_keys($data);
     $newid = QueryUtils::sqlInsert(
