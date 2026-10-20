@@ -316,7 +316,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
 
                 <?php if (!$discharged) : ?>
                 <div class="d-flex flex-wrap mb-3" style="gap:6px;">
-                    <button type="button" class="btn btn-primary btn-mov" data-mode="transfer"><i class="fa fa-exchange-alt mr-1"></i><?php echo xlt('Transfer'); ?></button>
+                    <button type="button" class="btn btn-primary btn-mov" data-mode="transfer"><i class="fa fa-exchange-alt mr-1"></i><?php echo xlt('Transfer patient'); ?></button>
                     <button type="button" class="btn btn-outline-primary btn-mov" data-mode="reserve"><i class="fa fa-bed mr-1"></i><?php echo xlt('Reserve bed'); ?></button>
                     <button type="button" class="btn btn-outline-secondary btn-mov" data-mode="correct"><i class="fa fa-pencil-alt mr-1"></i><?php echo xlt('Correct current location'); ?></button>
                 </div>
@@ -379,8 +379,8 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     <table class="table table-sm table-bordered mov-history">
                         <thead>
                             <tr>
-                                <th><?php echo xlt('From'); ?></th>
-                                <th><?php echo xlt('To'); ?></th>
+                                <th><?php echo xlt('Location start'); ?></th>
+                                <th><?php echo xlt('Location end'); ?></th>
                                 <th><?php echo xlt('Department'); ?></th>
                                 <th><?php echo xlt('Service'); ?></th>
                                 <th><?php echo xlt('Ward / Bed'); ?></th>
@@ -437,7 +437,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
 
     // One form for the three movements; the button sets what it records.
     var movTexts = <?php echo json_encode([
-        'transfer' => [xl('Transfer'), xl('The current location ends and the new one starts at the date and time below. Both stay in the history.'), xl('Date and time of the transfer')],
+        'transfer' => [xl('Transfer patient'), xl('The current location ends and the new one starts at the date and time below. Both stay in the history.'), xl('Date and time of the transfer')],
         'reserve'  => [xl('Reserve bed'), xl('The bed is assigned but the patient has not arrived yet. The current location does not change until the arrival is recorded.'), xl('Expected arrival')],
         'correct'  => [xl('Correct current location'), xl('Only to fix a data entry error. It does not record a transfer; the history keeps who corrected it and when.'), ''],
     ]); ?>;
