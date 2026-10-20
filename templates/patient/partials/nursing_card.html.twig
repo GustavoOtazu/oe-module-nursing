@@ -37,7 +37,7 @@ Nursing admission card for the patient dashboard.
                 {% endif %}
                 {% if admission.cuarto or admission.cama %}
                 <tr>
-                    <td class="font-weight-bold">{{ "Room / Bed"|xlt }}</td>
+                    <td class="font-weight-bold">{{ "Ward / Bed"|xlt }}</td>
                     <td>{{ admission.cuarto|upper|text }}{% if admission.cuarto and admission.cama %} / {% endif %}{{ admission.cama|text }}</td>
                 </tr>
                 {% endif %}
