@@ -9,7 +9,14 @@ It was developed as an undergraduate thesis project at the Facultad Politécnica
 **Inpatient list** (top menu *Nursing*)
 - Current admissions with record number, ward, bed and admission date; discharge and death registration.
 - A form selector per patient, with direct access to OpenEMR's vitals form for that admission.
-- A card in the patient summary showing whether the patient is admitted.
+- A card in the patient summary showing whether the patient is admitted, where, with which primary team and since when.
+
+**Location history** (button *Location and transfers*)
+- Ward, bed, service and primary team are not overwritten: each transfer closes the current location and opens a new one, and the admission keeps the full history.
+- A bed can be reserved before the patient arrives (e.g. still in the ED); the current location changes only when the arrival is recorded.
+- Data entry errors are corrected without recording a transfer, keeping who corrected them and when.
+- Location changes made outside the module (e.g. by the hospital information system) are detected and recorded.
+- `form_encounter` keeps only the current location; the history is in the module's own table `nursing_admission_movement`.
 
 **Nursing forms** (each one also available from the encounter)
 - Wound care, applications, care bundle, nursing evaluation (with Glasgow), mechanical ventilation record.
@@ -53,7 +60,7 @@ Then, in **Manage Modules**, **Disable** and **Enable** the module. Enabling it 
 
 ## Development
 
-The scoring classes (`src/Scoring`) and the vital-sign take scoring have unit tests in `tests/`. They need PHPUnit and OpenEMR's autoloader; `NursingCardTest` also needs an OpenEMR database.
+The scoring classes (`src/Scoring`), the vital-sign take scoring and the location history rules have unit tests in `tests/`. They need PHPUnit and OpenEMR's autoloader; `NursingCardTest` also needs an OpenEMR database.
 
 ## License
 
