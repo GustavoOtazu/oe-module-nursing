@@ -21,24 +21,24 @@ Nursing admission card for the patient dashboard.
                 {% endif %}
                 <tr>
                     <td class="font-weight-bold">{{ "Admission Date"|xlt }}</td>
-                    <td>{{ admission.admission_date|text }}</td>
+                    <td>{{ admission.admission_date|date("d/m/Y")|text }}</td>
                 </tr>
                 {% if admission.departamento %}
                 <tr>
                     <td class="font-weight-bold">{{ "Department"|xlt }}</td>
-                    <td>{{ admission.departamento|text }}</td>
+                    <td>{{ (labels[admission.departamento] ?? admission.departamento)|text }}</td>
                 </tr>
                 {% endif %}
                 {% if admission.servicio %}
                 <tr>
                     <td class="font-weight-bold">{{ "Service"|xlt }}</td>
-                    <td>{{ admission.servicio|text }}</td>
+                    <td>{{ (labels[admission.servicio] ?? admission.servicio)|text }}</td>
                 </tr>
                 {% endif %}
                 {% if admission.cuarto or admission.cama %}
                 <tr>
                     <td class="font-weight-bold">{{ "Room / Bed"|xlt }}</td>
-                    <td>{{ admission.cuarto|text }}{% if admission.cuarto and admission.cama %} / {% endif %}{{ admission.cama|text }}</td>
+                    <td>{{ admission.cuarto|upper|text }}{% if admission.cuarto and admission.cama %} / {% endif %}{{ admission.cama|text }}</td>
                 </tr>
                 {% endif %}
                 {% if admission.equipo %}

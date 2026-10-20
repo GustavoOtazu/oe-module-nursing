@@ -232,6 +232,12 @@ $nursing_forms = [
             border-bottom: 3px solid rgba(255, 255, 255, 0.15) !important;
         }
 
+        /* Keep neighbouring values apart (e.g. a long Reg. No. ran into the service). */
+        #inp_table tbody td {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
         @media (max-width: 576px) {
             .btn-enf-card { min-height: 100px; }
             .btn-enf-card .enf-icon { width: 44px; height: 44px; }
@@ -296,7 +302,7 @@ $nursing_forms = [
                                 <th class="head"><?php echo xlt('Patient'); ?></th>
                                 <th class="head"><?php echo xlt('Admission'); ?></th>
                                 <th class="head"><?php echo xlt('ID (Patient Record)'); ?></th>
-                                <th class="head" style="width:4%;"><?php echo xlt('Reg. No.'); ?></th>
+                                <th class="head" style="width:7%;"><?php echo xlt('Reg. No.'); ?></th>
                                 <th class="head" style="width:10%;"><?php echo xlt('Service'); ?></th>
                                 <th class="head" style="width:10%;"><?php echo xlt('Ward'); ?></th>
                                 <th class="head" style="width:5%;"><?php echo xlt('Bed'); ?></th>

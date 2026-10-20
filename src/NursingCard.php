@@ -53,6 +53,14 @@ class NursingCard extends CardModel
             'title' => xl('Nursing'),
             'templateVariables' => [
                 'admission' => $admission,
+                // Names of the stored codes, so the card shows "Adult Therapy" and not "terapia_adulto".
+                'labels'    => [
+                    'terapia_adulto' => xl('Adult Therapy'),
+                    'terapia_kids'   => xl('Pediatric Therapy'),
+                    'intensivo'      => xl('Intensive'),
+                    'intermedia'     => xl('Intermediate'),
+                    'minima'         => xl('Minimal'),
+                ],
                 'webroot'   => $webroot,
                 'pid'       => $pid,
                 'moduleBasePath' => '/interface/modules/custom_modules/oe-module-nursing/public',
