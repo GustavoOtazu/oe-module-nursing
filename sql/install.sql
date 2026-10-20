@@ -1191,7 +1191,31 @@ INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Method not allowed', 'Método no permitido'),
   ('Redirecting...', 'Redirigiendo...'),
   ('Error: Could not save the record. Please try again.', 'Error: no se pudo guardar el registro. Intente de nuevo.'),
-  ('Error: Missing required data (PID or Encounter)', 'Error: faltan datos obligatorios (PID o visita)');
+  ('Error: Missing required data (PID or Encounter)', 'Error: faltan datos obligatorios (PID o visita)'),
+  ('See More Vital Records History', 'Ver historial completo de signos vitales'),
+  ('Vitals History', 'Historial de signos vitales'),
+  ('Back to top', 'Volver arriba'),
+  ('Back to patient dashboard', 'Volver a la ficha del paciente'),
+  ('Height/Length', 'Talla/Longitud'),
+  ('Oxygen Flow Rate', 'Flujo de oxígeno'),
+  ('Inhaled Oxygen Concentration', 'Concentración de oxígeno inspirado'),
+  ('Pediatric Weight Height Percentile', 'Percentil de peso para la talla (pediátrico)'),
+  ('Pediatric BMI Percentile', 'Percentil de IMC (pediátrico)'),
+  ('Pediatric Head Circumference Percentile', 'Percentil de circunferencia cefálica (pediátrico)'),
+  ('Decimal pounds or pounds and ounces separated by #(e.g. 5#4)', 'Libras con decimales, o libras y onzas separadas por # (p. ej. 5#4)'),
+  ('Reason Code', 'Código de motivo'),
+  ('Reason Status', 'Estado del motivo'),
+  ('Reason Information', 'Información del motivo'),
+  ('Select a reason code', 'Seleccione un código de motivo'),
+  ('Select a status code', 'Seleccione un estado'),
+  ('Pending', 'Pendiente'),
+  ('Completed', 'Completado'),
+  ('Negated', 'Negado'),
+  ('Critical abnormal', 'Anormal crítico'),
+  ('Critical high', 'Alto crítico'),
+  ('Critical low', 'Bajo crítico'),
+  ('Significantly high', 'Significativamente alto'),
+  ('Significantly low', 'Significativamente bajo');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_fix_lang t
