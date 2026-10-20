@@ -195,6 +195,12 @@ ob_start();
             &nbsp;|&nbsp;
             <?php echo xlt('Record Time'); ?>: <strong><?php echo text($eval_time); ?></strong>
         </div>
+        <?php $vitalsUsed = \OpenEMR\Modules\Nursing\Prefill\VitalsChoice::describe((int) ($row['vitals_id'] ?? 0), (int) $pid); ?>
+        <?php if ($vitalsUsed !== null) : ?>
+        <div style="font-size:8px; color:#7f8c8d; margin-top:3px;">
+            <?php echo xlt('Vital signs take used'); ?>: <strong><?php echo text($vitalsUsed); ?></strong>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- PATIENT INFO -->

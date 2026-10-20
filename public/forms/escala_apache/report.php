@@ -221,6 +221,12 @@ function escala_apache_report(int $pid, int $encounter, int $cols, int $id): voi
             <span><strong><?php echo xlt('Recorded'); ?>:</strong> <?php echo text($fecha); ?></span>
             <span><strong><?php echo xlt('User'); ?>:</strong> <?php echo text($user); ?></span>
         </div>
+        <?php $vitalsUsed = \OpenEMR\Modules\Nursing\Prefill\VitalsChoice::describe((int) ($result['vitals_id'] ?? 0), (int) $pid); ?>
+        <?php if ($vitalsUsed !== null) : ?>
+        <div class="meta-bar">
+            <span><strong><?php echo xlt('Vital signs take used'); ?>:</strong> <?php echo text($vitalsUsed); ?></span>
+        </div>
+        <?php endif; ?>
 
         <div class="sec-header"><?php echo xlt('APACHE II Score'); ?></div>
         <table>
