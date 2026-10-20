@@ -334,7 +334,7 @@ $nursing_forms = [
                                         <div class="inner">
                                             <button class="btn btn-info btn-sm btn-editar" type="button"
                                                 data-id="<?php echo attr((string)($result['id'] ?? '')); ?>">
-                                                <i class="fa fa-exchange-alt mr-1"></i><?php echo xlt('Location and transfers'); ?>
+                                                <i class="fa fa-exchange-alt mr-1"></i><?php echo xlt('Patient transfers'); ?>
                                             </button>
                                         </div>
                                         <div class="inner">

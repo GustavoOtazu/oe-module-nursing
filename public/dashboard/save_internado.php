@@ -150,6 +150,8 @@ if (in_array($mode, $movementModes, true)) {
             'correct'  => AdmissionMovements::correct($feEncounter, $location, $user),
         };
         $result = $mode;
+    } catch (\DomainException) {
+        $result = 'same';
     } catch (\InvalidArgumentException) {
         $result = 'error';
     }

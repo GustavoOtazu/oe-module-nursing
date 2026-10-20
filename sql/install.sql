@@ -1289,6 +1289,8 @@ INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Only to fix a data entry error. It does not record a transfer; the history keeps who corrected it and when.', 'Solo para corregir un error de carga. No registra un traslado; en el historial queda quién lo corrigió y cuándo.'),
   ('In this bed since', 'En esta cama desde'),
   ('Location and transfers', 'Ubicación y traslados'),
+  ('Patient transfers', 'Traslados'),
+  ('The patient is already in that location with that team. Nothing was recorded.', 'El paciente ya está en esa ubicación con ese equipo. No se registró nada.'),
   ('Invalid date', 'Fecha inválida'),
   ('Significantly low', 'Significativamente bajo');
 

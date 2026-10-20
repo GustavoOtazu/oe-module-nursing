@@ -109,6 +109,7 @@ $doneMessages = [
     'confirm'  => ['success', xl('Arrival at the reserved bed recorded.')],
     'cancel'   => ['success', xl('Reservation cancelled.')],
     'correct'  => ['success', xl('Current location corrected.')],
+    'same'     => ['warning', xl('The patient is already in that location with that team. Nothing was recorded.')],
     'error'    => ['danger', xl('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.')],
 ];
 

@@ -131,6 +131,11 @@ final class AdmissionMovements
         if ($current !== null && $when < (string) $current['start_date']) {
             throw new \InvalidArgumentException('The transfer cannot be earlier than the start of the current location.');
         }
+        // Same bed and same team is not a movement; same bed with another team is (a change of team).
+        if ($current !== null && !self::locationChanged($current, $location)
+            && self::norm($current['equipo'] ?? null) === self::norm($location['equipo'] ?? null)) {
+            throw new \DomainException('The patient is already in that location.');
+        }
         $reservation = null;
         foreach (self::reservations($encounter) as $res) {
             if (!self::locationChanged($res, $location)) {

@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OpenEMR\Modules\Nursing;
 
+use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Events\Core\TwigEnvironmentEvent;
 use OpenEMR\Events\Encounter\LoadEncounterFormFilterEvent;
 use OpenEMR\Events\Patient\Summary\Card\SectionEvent;
@@ -87,7 +88,9 @@ class Bootstrap
             return;
         }
 
-        $pid = (int) ($_SESSION['pid'] ?? 0);
+        // OpenEMR 8 keeps the session behind SessionWrapper; $_SESSION is not filled.
+        $pid = SessionWrapperFactory::getInstance()->getActiveSession()->get('pid');
+        $pid = is_numeric($pid) ? (int) $pid : 0;
         if ($pid <= 0) {
             return;
         }
