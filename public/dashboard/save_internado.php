@@ -1,7 +1,8 @@
 <?php
 
 /**
- * Save handler for inpatient admissions (new and edit).
+ * Save handler for inpatient admissions: new, edit, and the location movements
+ * (transfer, bed reservation, arrival, cancellation and correction).
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -20,6 +21,7 @@ use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Common\Uuid\UuidRegistry;
+use OpenEMR\Modules\Nursing\AdmissionMovements;
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 
@@ -84,29 +86,74 @@ if ($mode === 'new') {
     );
 
     (new FormService())->addForm($encounter, "New Patient Encounter", (int)$fe_id, "newpatient", $pid, $provider_id);
+    AdmissionMovements::sync($inpatient_catid, (int) $fe_id);
 
     header("Location: lista_internados.php?update=1");
     exit;
 }
 
 if ($mode === 'edit') {
-    if ($encounter_id <= 0) {
-        die(xlt('Invalid encounter'));
-    }
-
-    $feRow = QueryUtils::querySingleRow("SELECT pid, encounter FROM form_encounter WHERE id = ?", [$encounter_id]);
+    // Only the admission data; the location changes through the movements below.
+    $feRow = $encounter_id > 0 ? QueryUtils::querySingleRow("SELECT id FROM form_encounter WHERE id = ?", [$encounter_id]) : false;
     if (!$feRow) {
         die(xlt('Encounter not found'));
     }
-
     QueryUtils::sqlStatementThrowException(
-        "UPDATE form_encounter
-         SET nro_registro = ?, departamento = ?, servicio = ?, cuarto = ?, cama = ?
-         WHERE id = ?",
-        [$nro_registro, $departamento, $servicio, $cuarto, $cama, $encounter_id]
+        "UPDATE form_encounter SET nro_registro = ? WHERE id = ?",
+        [$nro_registro, $encounter_id]
     );
-
     header("Location: lista_internados.php?update=1");
+    exit;
+}
+
+$movementModes = ['transfer', 'reserve', 'confirm', 'cancel', 'correct'];
+if (in_array($mode, $movementModes, true)) {
+    /** @var array<string, string|int|null>|false $feRow */
+    $feRow = $encounter_id > 0
+        ? QueryUtils::querySingleRow("SELECT pid, encounter, date_end FROM form_encounter WHERE id = ?", [$encounter_id])
+        : false;
+    if (!$feRow || ($feRow['date_end'] ?? null) !== null) {
+        die(xlt('Encounter not found'));
+    }
+    $fePid       = (int) $feRow['pid'];
+    $feEncounter = (int) $feRow['encounter'];
+    $user        = is_string($v = $session->get('authUser')) ? $v : '';
+    $location    = [
+        'departamento' => $departamento,
+        'servicio'     => $servicio,
+        'cuarto'       => $cuarto,
+        'cama'         => $cama,
+        'equipo'       => (string) filter_input(INPUT_POST, 'equipo'),
+    ];
+    $note = (string) filter_input(INPUT_POST, 'note');
+
+    // Date and time of the movement (datetime-local input); now if missing.
+    $whenRaw = (string) filter_input(INPUT_POST, 'when');
+    $whenTs  = $whenRaw !== '' ? strtotime($whenRaw) : time();
+    if ($whenTs === false) {
+        die(xlt('Invalid date'));
+    }
+    // Only a reservation can be in the future (a few minutes of clock skew are allowed).
+    if ($mode !== 'reserve' && $whenTs > time() + 300) {
+        $whenTs = time();
+    }
+    $when = date('Y-m-d H:i:s', $whenTs);
+    $movementId = (int) filter_input(INPUT_POST, 'movement_id', FILTER_SANITIZE_NUMBER_INT);
+
+    AdmissionMovements::sync($inpatient_catid, $encounter_id);
+    try {
+        match ($mode) {
+            'transfer' => AdmissionMovements::transfer($fePid, $feEncounter, $location, $when, $user, $note),
+            'reserve'  => AdmissionMovements::reserve($fePid, $feEncounter, $location, $when, $user, $note),
+            'confirm'  => AdmissionMovements::confirm($movementId, $feEncounter, $when, $user),
+            'cancel'   => AdmissionMovements::cancel($movementId, $feEncounter, $user),
+            'correct'  => AdmissionMovements::correct($feEncounter, $location, $user),
+        };
+        $result = $mode;
+    } catch (\InvalidArgumentException) {
+        $result = 'error';
+    }
+    header("Location: editar_internado.php?id=" . urlencode((string) $encounter_id) . "&done=" . urlencode($result));
     exit;
 }
 

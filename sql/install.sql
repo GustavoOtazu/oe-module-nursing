@@ -671,6 +671,34 @@ ALTER TABLE `form_encounter` ADD COLUMN `cuarto` VARCHAR(55) DEFAULT NULL;
 ALTER TABLE `form_encounter` ADD COLUMN `nro_registro` VARCHAR(40) DEFAULT NULL;
 #EndIf
 
+-- Location history of each admission (src/AdmissionMovements.php). form_encounter
+-- keeps the current location; every change of it is kept here.
+#IfNotTable nursing_admission_movement
+CREATE TABLE `nursing_admission_movement` (
+  `id`            bigint(20)   NOT NULL AUTO_INCREMENT,
+  `pid`           bigint(20)   NOT NULL,
+  `encounter`     bigint(20)   NOT NULL COMMENT 'form_encounter.encounter of the admission',
+  `departamento`  varchar(55)  DEFAULT NULL,
+  `servicio`      varchar(55)  DEFAULT NULL,
+  `cuarto`        varchar(55)  DEFAULT NULL,
+  `cama`          varchar(55)  DEFAULT NULL,
+  `equipo`        varchar(100) DEFAULT NULL COMMENT 'primary team / specialty',
+  `start_date`    datetime     NOT NULL COMMENT 'arrival; expected arrival for a reservation',
+  `end_date`      datetime     DEFAULT NULL,
+  `status`        varchar(16)  NOT NULL DEFAULT 'current' COMMENT 'current, reserved, ended, cancelled',
+  `source`        varchar(16)  NOT NULL DEFAULT 'manual' COMMENT 'admission, manual, detected',
+  `user`          varchar(255) DEFAULT NULL COMMENT 'who recorded it',
+  `arrived_by`    varchar(255) DEFAULT NULL COMMENT 'who confirmed the arrival at a reserved bed',
+  `note`          varchar(255) DEFAULT NULL,
+  `corrected_by`  varchar(255) DEFAULT NULL,
+  `corrected_at`  datetime     DEFAULT NULL,
+  `created_at`    datetime     NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `encounter_status` (`encounter`, `status`),
+  KEY `pid` (`pid`)
+) ENGINE=InnoDB;
+#EndIf
+
 -- -------------------------------------------------------------------------
 -- UTI extension: fluid balance, nutrition, SOFA, APACHE II and care plan.
 -- Scores and totals are computed server-side by src/Scoring/*.
@@ -1215,6 +1243,52 @@ INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Critical high', 'Alto crítico'),
   ('Critical low', 'Bajo crítico'),
   ('Significantly high', 'Significativamente alto'),
+  ('Current', 'Actual'),
+  ('Reserved', 'Reservada'),
+  ('Ended', 'Finalizada'),
+  ('Cancelled', 'Cancelada'),
+  ('Recorded in the module', 'Registrado en el módulo'),
+  ('Detected (SIH or other system)', 'Detectado (SIH u otro sistema)'),
+  ('Transfer recorded.', 'Traslado registrado.'),
+  ('Bed reserved.', 'Cama reservada.'),
+  ('Arrival at the reserved bed recorded.', 'Llegada a la cama reservada registrada.'),
+  ('Reservation cancelled.', 'Reserva cancelada.'),
+  ('Current location corrected.', 'Ubicación actual corregida.'),
+  ('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.', 'No se pudo registrar el movimiento. Revise la fecha y la hora: no puede ser anterior al inicio de la ubicación actual.'),
+  ('Primary team', 'Equipo tratante'),
+  ('e.g. Internal Medicine, General Surgery', 'p. ej. Clínica Médica, Cirugía General'),
+  ('Current location', 'Ubicación actual'),
+  ('Ward / Bed', 'Sala / Cama'),
+  ('Not recorded', 'Sin registrar'),
+  ('Since', 'Desde'),
+  ('No current location.', 'Sin ubicación actual.'),
+  ('Transfer', 'Trasladar'),
+  ('Reserve bed', 'Reservar cama'),
+  ('Correct current location', 'Corregir ubicación actual'),
+  ('Date and time', 'Fecha y hora'),
+  ('e.g. reason for the transfer', 'p. ej. motivo del traslado'),
+  ('Reserved beds', 'Camas reservadas'),
+  ('Reserved bed', 'Cama reservada'),
+  ('Expected arrival', 'Llegada prevista'),
+  ('Reserved by', 'Reservada por'),
+  ('Arrival', 'Llegada'),
+  ('Patient arrived', 'Llegó el paciente'),
+  ('Cancel reservation', 'Cancelar reserva'),
+  ('Location history', 'Historial de ubicaciones'),
+  ('No movements recorded.', 'No hay movimientos registrados.'),
+  ('Recorded by', 'Registrado por'),
+  ('Now', 'Ahora'),
+  ('Arrival recorded by', 'Llegada registrada por'),
+  ('Cancelled by', 'Cancelada por'),
+  ('Corrected by', 'Corregida por'),
+  ('Date and time of the transfer', 'Fecha y hora del traslado'),
+  ('The current location ends and the new one starts at the date and time below. Both stay in the history.', 'La ubicación actual termina y la nueva empieza en la fecha y hora indicadas. Las dos quedan en el historial.'),
+  ('The bed is assigned but the patient has not arrived yet. The current location does not change until the arrival is recorded.', 'La cama queda asignada, pero el paciente todavía no llegó. La ubicación actual no cambia hasta que se registre la llegada.'),
+  ('Only to fix a data entry error. It does not record a transfer; the history keeps who corrected it and when.', 'Solo para corregir un error de carga. No registra un traslado; en el historial queda quién lo corrigió y cuándo.'),
+  ('Location', 'Ubicación'),
+  ('In this bed since', 'En esta cama desde'),
+  ('Location and transfers', 'Ubicación y traslados'),
+  ('Invalid date', 'Fecha inválida'),
   ('Significantly low', 'Significativamente bajo');
 
 INSERT INTO lang_constants (constant_name)

@@ -80,12 +80,14 @@ class NursingCard extends CardModel
 
         $row = QueryUtils::querySingleRow(
             "SELECT fe.id AS encounter_id, fe.encounter, fe.date AS admission_date,
-                    fe.nro_registro, fe.departamento, fe.servicio, fe.cuarto, fe.cama
+                    fe.nro_registro, fe.departamento, fe.servicio, fe.cuarto, fe.cama,
+                    m.equipo, m.start_date AS location_since
              FROM form_encounter AS fe
+             LEFT JOIN " . AdmissionMovements::TABLE . " AS m ON m.encounter = fe.encounter AND m.status = ?
              WHERE fe.pid = ? AND fe.pc_catid = ? AND fe.date_end IS NULL
              ORDER BY fe.date DESC
              LIMIT 1",
-            [$pid, (int)($catRow['pc_catid'] ?? 0)]
+            [AdmissionMovements::CURRENT, $pid, (int)($catRow['pc_catid'] ?? 0)]
         );
 
         return $row ?: null;

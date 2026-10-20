@@ -41,13 +41,25 @@ Nursing admission card for the patient dashboard.
                     <td>{{ admission.cuarto|text }}{% if admission.cuarto and admission.cama %} / {% endif %}{{ admission.cama|text }}</td>
                 </tr>
                 {% endif %}
+                {% if admission.equipo %}
+                <tr>
+                    <td class="font-weight-bold">{{ "Primary team"|xlt }}</td>
+                    <td>{{ admission.equipo|text }}</td>
+                </tr>
+                {% endif %}
+                {% if admission.location_since %}
+                <tr>
+                    <td class="font-weight-bold">{{ "In this bed since"|xlt }}</td>
+                    <td>{{ admission.location_since|date("d/m/Y H:i")|text }}</td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
         <div class="mt-1">
             <a class="btn btn-sm btn-outline-primary"
                href="{{ webroot|attr }}{{ moduleBasePath|attr }}/dashboard/editar_internado.php?id={{ admission.encounter_id|attr_url }}"
                onclick="top.restoreSession()">
-                <i class="fa fa-edit"></i>&nbsp;{{ "Edit Admission"|xlt }}
+                <i class="fa fa-exchange-alt"></i>&nbsp;{{ "Location and transfers"|xlt }}
             </a>
         </div>
     {% else %}

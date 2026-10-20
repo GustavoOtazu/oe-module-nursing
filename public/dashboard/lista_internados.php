@@ -22,6 +22,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
+use OpenEMR\Modules\Nursing\AdmissionMovements;
 use OpenEMR\OeUI\OemrUI;
 
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
@@ -53,12 +54,14 @@ if (filter_input(INPUT_SERVER, 'REQUEST_METHOD') === 'POST') {
             "UPDATE form_encounter SET date_end = ?, death_date = ? WHERE id = ?",
             [$death_date_safe, $death_date_safe, $id_encounter]
         );
+        AdmissionMovements::close($id_encounter, $death_date_safe);
         $action_performed = true;
     } elseif ($id_encounter) {
         QueryUtils::sqlStatementThrowException(
             "UPDATE form_encounter SET date_end = DATE(NOW()) WHERE id = ?",
             [$id_encounter]
         );
+        AdmissionMovements::close($id_encounter, date('Y-m-d'));
         $action_performed = true;
     }
 }
@@ -72,13 +75,20 @@ $catRow = QueryUtils::querySingleRow(
 );
 $inpatient_catid = $catRow !== false ? (int)($catRow['pc_catid'] ?? 0) : 0;
 
+// Record the location changes made outside the module (e.g. by the SIH) before listing.
+AdmissionMovements::sync($inpatient_catid);
+
 /** @var list<array<string, string|int|null>> $inpatient */
 $inpatient = QueryUtils::fetchRecords(
-    "SELECT f.*, CONCAT(p.fname, ' ', p.lname) AS paciente, p.pubpid AS pubpid
+    "SELECT f.*, CONCAT(p.fname, ' ', p.lname) AS paciente, p.pubpid AS pubpid,
+            m.equipo AS equipo_actual,
+            (SELECT CONCAT(UPPER(r.cuarto), ' / ', r.cama) FROM " . AdmissionMovements::TABLE . " r
+              WHERE r.encounter = f.encounter AND r.status = ? ORDER BY r.start_date, r.id LIMIT 1) AS cama_reservada
      FROM form_encounter AS f
      JOIN patient_data AS p ON p.pid = f.pid
+     LEFT JOIN " . AdmissionMovements::TABLE . " AS m ON m.encounter = f.encounter AND m.status = ?
      WHERE f.pc_catid = ? AND f.date_end IS NULL",
-    [$inpatient_catid]
+    [AdmissionMovements::RESERVED, AdmissionMovements::CURRENT, $inpatient_catid]
 );
 
 // Nursing form definitions: form folder => display label
@@ -306,15 +316,25 @@ $nursing_forms = [
                                 <td><?php echo text(date('d/m/Y', $ts_date !== false ? $ts_date : time())); ?></td>
                                 <td><?php echo text((string)($result['pubpid'] ?? '')); ?></td>
                                 <td><?php echo text((string)($result['nro_registro'] ?? '')); ?></td>
-                                <td><?php echo text(strtoupper((string)($result['servicio'] ?? ''))); ?></td>
+                                <td>
+                                    <?php echo text(strtoupper((string)($result['servicio'] ?? ''))); ?>
+                                    <?php if ((string)($result['equipo_actual'] ?? '') !== '') : ?>
+                                    <small class="d-block text-muted"><?php echo text((string)$result['equipo_actual']); ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo text(strtoupper((string)($result['cuarto'] ?? ''))); ?></td>
-                                <td><?php echo text((string)($result['cama'] ?? '')); ?></td>
+                                <td>
+                                    <?php echo text((string)($result['cama'] ?? '')); ?>
+                                    <?php if ((string)($result['cama_reservada'] ?? '') !== '') : ?>
+                                    <small class="d-block text-info" title="<?php echo xla('Reserved bed'); ?>"><i class="fa fa-bed"></i> <?php echo text((string)$result['cama_reservada']); ?></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <div class="outer">
                                         <div class="inner">
                                             <button class="btn btn-info btn-sm btn-editar" type="button"
                                                 data-id="<?php echo attr((string)($result['id'] ?? '')); ?>">
-                                                <i class="fa fa-pencil-alt mr-1"></i><?php echo xlt('Edit'); ?>
+                                                <i class="fa fa-exchange-alt mr-1"></i><?php echo xlt('Location'); ?>
                                             </button>
                                         </div>
                                         <div class="inner">
