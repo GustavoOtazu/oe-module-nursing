@@ -67,7 +67,10 @@ class ModuleManagerListener extends AbstractModuleActionListener
 
     private function enable($modId, $currentActionStatus): mixed
     {
-        return $currentActionStatus;
+        // The module manager only offers "Upgrade SQL" for modules with versioned
+        // upgrade files; this one has a single idempotent install.sql. Running it
+        // when the module is enabled makes updating "Disable, then Enable".
+        return self::runInstallSql($currentActionStatus, 'enable');
     }
 
     private function disable($modId, $currentActionStatus): mixed
