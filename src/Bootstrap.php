@@ -4,7 +4,7 @@
  * Bootstrap for the OpenEMR Nursing Module.
  *
  * Subscribes to OpenEMR events to register menu items, patient cards,
- * Twig template paths, and form file resolution.
+ * Twig template paths, form file resolution and the admission REST API.
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -21,7 +21,10 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Events\Core\TwigEnvironmentEvent;
 use OpenEMR\Events\Encounter\LoadEncounterFormFilterEvent;
 use OpenEMR\Events\Patient\Summary\Card\SectionEvent;
+use OpenEMR\Events\RestApiExtend\RestApiCreateEvent;
+use OpenEMR\Events\RestApiExtend\RestApiScopeEvent;
 use OpenEMR\Menu\MenuEvent;
+use OpenEMR\Modules\Nursing\Api\AdmissionRoutes;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Twig\Loader\FilesystemLoader;
 
@@ -54,6 +57,9 @@ class Bootstrap
         $this->eventDispatcher->addListener(SectionEvent::EVENT_HANDLE, $this->addNursingCard(...));
         $this->eventDispatcher->addListener(TwigEnvironmentEvent::EVENT_CREATED, $this->addTemplateOverrideLoader(...));
         $this->eventDispatcher->addListener(LoadEncounterFormFilterEvent::EVENT_NAME, $this->redirectFormPaths(...));
+        // REST API for the SIH web service (src/Api/AdmissionApi.php)
+        $this->eventDispatcher->addListener(RestApiCreateEvent::EVENT_HANDLE, AdmissionRoutes::addRoutes(...));
+        $this->eventDispatcher->addListener(RestApiScopeEvent::EVENT_TYPE_GET_SUPPORTED_SCOPES, AdmissionRoutes::addScopes(...));
     }
 
     /**

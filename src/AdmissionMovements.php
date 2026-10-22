@@ -38,10 +38,14 @@ final class AdmissionMovements
     public const ENDED = 'ended';
     public const CANCELLED = 'cancelled';
 
-    /** admission: first location; manual: recorded in the module; detected: changed outside it. */
+    /**
+     * admission: first location; manual: recorded in the module; detected: changed outside it;
+     * sih: sent by the SIH web service through the API (src/Api/AdmissionApi.php).
+     */
     public const SOURCE_ADMISSION = 'admission';
     public const SOURCE_MANUAL = 'manual';
     public const SOURCE_DETECTED = 'detected';
+    public const SOURCE_SIH = 'sih';
 
     /**
      * Whether two locations differ. Empty and missing values are the same, and
@@ -125,7 +129,7 @@ final class AdmissionMovements
      *
      * @param array<string, string|null> $location departamento, servicio, cuarto, cama, equipo
      */
-    public static function transfer(int $pid, int $encounter, array $location, string $when, string $user, ?string $note): void
+    public static function transfer(int $pid, int $encounter, array $location, string $when, string $user, ?string $note, string $source = self::SOURCE_MANUAL): void
     {
         $current = self::current($encounter);
         if ($current !== null && $when < (string) $current['start_date']) {
@@ -144,8 +148,8 @@ final class AdmissionMovements
             }
         }
         if ($reservation === null) {
-            QueryUtils::inTransaction(function () use ($pid, $encounter, $location, $when, $user, $note, $current): void {
-                self::move($pid, $encounter, $location, $when, self::SOURCE_MANUAL, $user, $note, $current !== null ? (int) $current['id'] : 0);
+            QueryUtils::inTransaction(function () use ($pid, $encounter, $location, $when, $user, $note, $current, $source): void {
+                self::move($pid, $encounter, $location, $when, $source, $user, $note, $current !== null ? (int) $current['id'] : 0);
             });
             return;
         }

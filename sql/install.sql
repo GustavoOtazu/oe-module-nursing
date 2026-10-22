@@ -671,6 +671,11 @@ ALTER TABLE `form_encounter` ADD COLUMN `cuarto` VARCHAR(55) DEFAULT NULL;
 ALTER TABLE `form_encounter` ADD COLUMN `nro_registro` VARCHAR(40) DEFAULT NULL;
 #EndIf
 
+-- The SIH web service finds each admission by its record number (src/Api/AdmissionApi.php).
+#IfNotIndex form_encounter nro_registro
+CREATE INDEX `nro_registro` ON `form_encounter` (`nro_registro`);
+#EndIf
+
 -- Location history of each admission (src/AdmissionMovements.php). form_encounter
 -- keeps the current location; every change of it is kept here.
 #IfNotTable nursing_admission_movement
@@ -686,7 +691,7 @@ CREATE TABLE `nursing_admission_movement` (
   `start_date`    datetime     NOT NULL COMMENT 'arrival; expected arrival for a reservation',
   `end_date`      datetime     DEFAULT NULL,
   `status`        varchar(16)  NOT NULL DEFAULT 'current' COMMENT 'current, reserved, ended, cancelled',
-  `source`        varchar(16)  NOT NULL DEFAULT 'manual' COMMENT 'admission, manual, detected',
+  `source`        varchar(16)  NOT NULL DEFAULT 'manual' COMMENT 'admission, manual, detected, sih',
   `user`          varchar(255) DEFAULT NULL COMMENT 'who recorded it',
   `arrived_by`    varchar(255) DEFAULT NULL COMMENT 'who confirmed the arrival at a reserved bed',
   `note`          varchar(255) DEFAULT NULL,
@@ -1292,6 +1297,7 @@ INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Patient transfers', 'Traslados'),
   ('The patient is already in that location with that team. Nothing was recorded.', 'El paciente ya está en esa ubicación con ese equipo. No se registró nada.'),
   ('Invalid date', 'Fecha inválida'),
+  ('SIH web service', 'Servicio web del SIH'),
   ('Significantly low', 'Significativamente bajo');
 
 INSERT INTO lang_constants (constant_name)

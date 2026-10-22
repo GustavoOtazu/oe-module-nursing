@@ -102,6 +102,7 @@ $sourceLabels = [
     AdmissionMovements::SOURCE_ADMISSION => xl('Admission'),
     AdmissionMovements::SOURCE_MANUAL    => xl('Recorded in the module'),
     AdmissionMovements::SOURCE_DETECTED  => xl('Detected (SIH or other system)'),
+    AdmissionMovements::SOURCE_SIH       => xl('SIH web service'),
 ];
 $doneMessages = [
     'transfer' => ['success', xl('Transfer recorded.')],

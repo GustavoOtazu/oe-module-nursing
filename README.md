@@ -33,6 +33,12 @@ It was developed as an undergraduate thesis project at the Facultad Politécnica
 **Vital signs dashboard**
 - One card per inpatient with the latest take, a warning when it is older than 6 hours, and Chart.js charts of the admission's evolution.
 
+**Admission API** (for the hospital information system)
+- Adds the resource `nursing_admission` to OpenEMR's standard REST API, so the SIH web service ([ips_ws](https://github.com/GustavoOtazu/ips_ws)) keeps the admissions up to date through the API (OAuth2) instead of writing to the database. The standard API creates patients and encounters but cannot set the admission data this module adds.
+- `GET /apis/default/api/nursing_admission?nro_registro=…` or `?origen=sih&estado=abierta`, `POST /apis/default/api/nursing_admission` (admission: patient UUID, record number, admission date and location) and `PUT /apis/default/api/nursing_admission/{nro_registro}` (location change and/or discharge).
+- Same rules as the inpatient screens: an admission is an *Inpatient* encounter with its form row and location history; a transfer is recorded in the history (source *SIH web service*); a discharge fills `date_end` and closes the history. Repeating a request does not duplicate anything, and a patient who already has another open admission is rejected (409) for a person to review.
+- Scopes `user/nursing_admission.read` / `.write` (or `.crus`); the user also needs the `patients/med` ACL.
+
 ## Requirements
 
 - OpenEMR 8.1 or later
