@@ -66,15 +66,18 @@ final class AdmissionMovements
     }
 
     /**
-     * When a movement ends for a discharge or death recorded with a date only:
-     * now if it is today, the end of that day if it is in the past, and never
-     * before the movement started.
+     * When a movement ends for a discharge or death. With a date and time (as the
+     * SIH web service sends it), that time, but not in the future. With a date
+     * only (as the inpatient list records it): now if it is today, the end of
+     * that day if it is in the past. Never before the movement started.
      */
     public static function endFor(string $date, string $start, ?int $now = null): string
     {
         $now ??= time();
         $day = strtotime($date);
-        if ($day === false || date('Y-m-d', $day) >= date('Y-m-d', $now)) {
+        if ($day !== false && strlen(trim($date)) > 10) {
+            $end = date('Y-m-d H:i:s', min($day, $now));
+        } elseif ($day === false || date('Y-m-d', $day) >= date('Y-m-d', $now)) {
             $end = date('Y-m-d H:i:s', $now);
         } else {
             $end = date('Y-m-d', $day) . ' 23:59:59';

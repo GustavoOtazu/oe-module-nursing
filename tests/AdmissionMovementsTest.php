@@ -72,4 +72,18 @@ class AdmissionMovementsTest extends TestCase
         $now = (int) strtotime('2026-10-20 14:35:00');
         $this->assertSame('2026-10-20 14:35:00', AdmissionMovements::endFor('not a date', '', $now));
     }
+
+    public function testDischargeWithTimeKeepsThatTime(): void
+    {
+        $now = (int) strtotime('2026-10-20 14:35:00');
+        $this->assertSame('2026-10-20 14:15:03', AdmissionMovements::endFor('2026-10-20 14:15:03', '2026-10-18 08:00:00', $now));
+        $this->assertSame('2026-10-19 21:10:00', AdmissionMovements::endFor('2026-10-19 21:10:00', '2026-10-18 08:00:00', $now));
+    }
+
+    public function testDischargeTimeIsNeverInTheFutureNorBeforeTheStart(): void
+    {
+        $now = (int) strtotime('2026-10-20 14:35:00');
+        $this->assertSame('2026-10-20 14:35:00', AdmissionMovements::endFor('2026-10-20 18:00:00', '2026-10-18 08:00:00', $now));
+        $this->assertSame('2026-10-20 09:00:00', AdmissionMovements::endFor('2026-10-20 08:30:00', '2026-10-20 09:00:00', $now));
+    }
 }
