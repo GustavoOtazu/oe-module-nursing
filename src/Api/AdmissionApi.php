@@ -15,7 +15,10 @@
  *  - a readmission has another record number and is another encounter;
  *  - a bed change is a transfer in the location history;
  *  - a discharge fills date_end (what closes the admission in the module)
- *    and out_date, and closes the history.
+ *    and out_date, and closes the history. The SIH reports a discharge and a
+ *    death the same way, as the end of the stay, so both close it like this
+ *    (as the previous web service did with out_date); the date of death is
+ *    still recorded by the staff in the inpatient list.
  *
  * Each write runs in one transaction, and repeating a request does not
  * duplicate anything (the record number identifies the admission).
