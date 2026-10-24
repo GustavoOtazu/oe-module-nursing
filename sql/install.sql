@@ -2251,3 +2251,127 @@ JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_core_lang2;
+
+-- -------------------------------------------------------------------------
+-- Spanish for a few more OpenEMR texts of the ICU screens (top bar, vitals,
+-- encounters) and for the relationship list used in "Add Related Person".
+-- Only fills missing translations, on the indexed constant_name.
+-- -------------------------------------------------------------------------
+DROP TEMPORARY TABLE IF EXISTS nursing_core_lang3;
+CREATE TEMPORARY TABLE nursing_core_lang3 (cn VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_core_lang3 (cn, es) VALUES
+  ('Current user', 'Usuario actual'),
+  ('Group Encounter', 'Encuentro grupal'),
+  ('MFA Management', 'Autenticación en dos pasos'),
+  ('None{{Therapy Group}}', 'Ninguno'),
+  ('Patient has no other vital history to display', 'El paciente no tiene otros signos vitales registrados'),
+  ('Toggle the Patient Panel', 'Mostrar/ocultar el panel del paciente'),
+  ('Validation errors', 'Errores de validación'),
+  ('When recording a reason for the value (or absence of a value) of an observation both the reason code and status of the reason are required', 'Al registrar el motivo de un valor (o de su ausencia) en una observación, se requieren el código y el estado del motivo'),
+  ('Aunt Maternal', 'Tía materna'),
+  ('Aunt Paternal', 'Tía paterna'),
+  ('Brother Identical Twin', 'Hermano gemelo idéntico'),
+  ('Brother Natural', 'Hermano biológico'),
+  ('Brother Twin', 'Hermano gemelo'),
+  ('Brother Twin Fraternal', 'Hermano mellizo'),
+  ('Brother-In-Law', 'Cuñado'),
+  ('Child Adopted', 'Hijo/a adoptivo/a'),
+  ('Child Foster', 'Hijo/a de crianza'),
+  ('Child Natural', 'Hijo/a biológico/a'),
+  ('Cousin Maternal', 'Primo/a materno/a'),
+  ('Cousin Paternal', 'Primo/a paterno/a'),
+  ('Daughter', 'Hija'),
+  ('Daughter Adopted', 'Hija adoptiva'),
+  ('Daughter Foster', 'Hija de crianza'),
+  ('Daughter Natural', 'Hija biológica'),
+  ('Daughter-In-Law', 'Nuera'),
+  ('Family Member', 'Familiar'),
+  ('Family Member Extended', 'Familiar (familia extendida)'),
+  ('Father Adoptive', 'Padre adoptivo'),
+  ('Father Foster', 'Padre de crianza'),
+  ('Father Natural', 'Padre biológico'),
+  ('Father-In-Law', 'Suegro'),
+  ('Former Spouse', 'Excónyuge'),
+  ('Friend Unrelated', 'Amigo/a (sin parentesco)'),
+  ('Granddaughter', 'Nieta'),
+  ('Grandfather', 'Abuelo'),
+  ('Grandfather Maternal', 'Abuelo materno'),
+  ('Grandfather Paternal', 'Abuelo paterno'),
+  ('Grandmother', 'Abuela'),
+  ('Grandmother Maternal', 'Abuela materna'),
+  ('Grandmother Paternal', 'Abuela paterna'),
+  ('Grandparent Maternal', 'Abuelo/a materno/a'),
+  ('Grandparent Paternal', 'Abuelo/a paterno/a'),
+  ('Grandson', 'Nieto'),
+  ('Great-Grandfather', 'Bisabuelo'),
+  ('Great-Grandfather Maternal', 'Bisabuelo materno'),
+  ('Great-Grandfather Paternal', 'Bisabuelo paterno'),
+  ('Great-Grandmother', 'Bisabuela'),
+  ('Great-Grandmother Maternal', 'Bisabuela materna'),
+  ('Great-Grandmother Paternal', 'Bisabuela paterna'),
+  ('Great-Grandparent', 'Bisabuelo/a'),
+  ('Great-Grandparent Maternal', 'Bisabuelo/a materno/a'),
+  ('Great-Grandparent Paternal', 'Bisabuelo/a paterno/a'),
+  ('Half-Brother', 'Medio hermano'),
+  ('Half-Sibling', 'Medio/a hermano/a'),
+  ('Half-Sister', 'Media hermana'),
+  ('Husband', 'Esposo'),
+  ('Inlaw', 'Familiar político'),
+  ('Mother Adoptive', 'Madre adoptiva'),
+  ('Mother Foster', 'Madre de crianza'),
+  ('Mother Gestational', 'Madre gestante'),
+  ('Mother Natural', 'Madre biológica'),
+  ('Mother-In-Law', 'Suegra'),
+  ('Neighbor', 'Vecino/a'),
+  ('Nephew', 'Sobrino'),
+  ('Niece', 'Sobrina'),
+  ('Parent Adoptive', 'Padre/madre adoptivo/a'),
+  ('Parent Foster', 'Padre/madre de crianza'),
+  ('Parent Natural', 'Padre/madre biológico/a'),
+  ('Parent-In-Law', 'Suegro/a'),
+  ('Roommate', 'Compañero/a de vivienda'),
+  ('Sibling Natural', 'Hermano/a biológico/a'),
+  ('Sibling-In-Law', 'Cuñado/a'),
+  ('Sister Identical Twin', 'Hermana gemela idéntica'),
+  ('Sister Natural', 'Hermana biológica'),
+  ('Sister Twin', 'Hermana gemela'),
+  ('Sister Twin Fraternal', 'Hermana melliza'),
+  ('Sister-In-Law', 'Cuñada'),
+  ('Son', 'Hijo'),
+  ('Son Adopted', 'Hijo adoptivo'),
+  ('Son Foster', 'Hijo de crianza'),
+  ('Son Natural', 'Hijo biológico'),
+  ('Son-In-Law', 'Yerno'),
+  ('Step Sibling', 'Hermanastro/a'),
+  ('Stepbrother', 'Hermanastro'),
+  ('Stepdaughter', 'Hijastra'),
+  ('Stepfather', 'Padrastro'),
+  ('Stepmother', 'Madrastra'),
+  ('Stepsister', 'Hermanastra'),
+  ('Stepson', 'Hijastro'),
+  ('Twin', 'Gemelo/a'),
+  ('Twin Fraternal', 'Mellizo/a'),
+  ('Twin Identical', 'Gemelo/a idéntico/a'),
+  ('Uncle', 'Tío'),
+  ('Uncle Maternal', 'Tío materno'),
+  ('Uncle Paternal', 'Tío paterno'),
+  ('Wife', 'Esposa');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_core_lang3 t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_core_lang3 t ON c.constant_name = t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_core_lang3 t
+JOIN lang_constants c ON c.constant_name = t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_core_lang3;
