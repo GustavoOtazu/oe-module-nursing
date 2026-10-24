@@ -683,7 +683,23 @@ $nursing_forms = [
                     order: [[6, 'asc'], [7, 'asc']],
                     responsive: true,
                     orderCellsTop: true,
-                    fixedHeader: true
+                    fixedHeader: true,
+                    // DataTables brings its own English texts; use OpenEMR's translations instead
+                    language: {
+                        lengthMenu: <?php echo xlj('Show _MENU_ entries'); ?>,
+                        search: <?php echo xlj('Search'); ?> + ':',
+                        info: <?php echo xlj('Showing _START_ to _END_ of _TOTAL_ entries'); ?>,
+                        infoEmpty: <?php echo xlj('Showing 0 to 0 of 0 entries'); ?>,
+                        infoFiltered: <?php echo xlj('(filtered from _MAX_ total entries)'); ?>,
+                        zeroRecords: <?php echo xlj('No matching records found'); ?>,
+                        emptyTable: <?php echo xlj('No data available in table'); ?>,
+                        paginate: {
+                            first: <?php echo xlj('First'); ?>,
+                            last: <?php echo xlj('Last'); ?>,
+                            next: <?php echo xlj('Next'); ?>,
+                            previous: <?php echo xlj('Previous'); ?>
+                        }
+                    }
                 });
             });
         });

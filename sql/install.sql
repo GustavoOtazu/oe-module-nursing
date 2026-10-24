@@ -2437,3 +2437,59 @@ SET d.definition = t.es
 WHERE d.lang_id IN (3, 4);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang4;
+
+-- -------------------------------------------------------------------------
+-- Spanish found missing in a walkthrough of the ICU screens: patient summary
+-- (care team, assessments), encounter form menus, left panel and messages,
+-- demographics fields, and the table texts of the inpatient list. Only fills
+-- missing translations, on the indexed constant_name.
+-- -------------------------------------------------------------------------
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang5;
+CREATE TEMPORARY TABLE nursing_fix_lang5 (cn VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_fix_lang5 (cn, es) VALUES
+  ('Show _MENU_ entries', 'Mostrar _MENU_ registros'),
+  ('Showing _START_ to _END_ of _TOTAL_ entries', 'Mostrando _START_ a _END_ de _TOTAL_ registros'),
+  ('Showing 0 to 0 of 0 entries', 'Mostrando 0 a 0 de 0 registros'),
+  ('(filtered from _MAX_ total entries)', '(filtrado de _MAX_ registros en total)'),
+  ('No data available in table', 'No hay datos en la tabla'),
+  ('Assessments', 'Evaluaciones'),
+  ('Care Team Name', 'Nombre del equipo de cuidado'),
+  ('Care Team Status', 'Estado del equipo de cuidado'),
+  ('Member', 'Integrante'),
+  ('Role', 'Rol'),
+  ('Administrative', 'Administrativo'),
+  ('Orders', 'Órdenes'),
+  ('Questionnaires', 'Cuestionarios'),
+  ('Recent Patients', 'Pacientes recientes'),
+  ('Click to show search', 'Haga clic para mostrar la búsqueda'),
+  ('Dated Reminders', 'Recordatorios con fecha'),
+  ('Create A Dated Reminder', 'Crear un recordatorio con fecha'),
+  ('Send Message', 'Enviar mensaje'),
+  ('Patient Religion', 'Religión del paciente'),
+  ('Guardian Email Address', 'Correo electrónico del tutor'),
+  ('Trusted Direct Email Address', 'Correo seguro (Direct)'),
+  ('Patient Level Billing Note (Collections)', 'Nota de facturación del paciente (cobranzas)'),
+  ('Administrator', 'Administrador'),
+  ('Issues Help', 'Ayuda de problemas'),
+  ('History and Lifestyle Help', 'Ayuda de antecedentes y estilo de vida'),
+  ('Click to contract page to center view', 'Haga clic para centrar la página'),
+  ('MedEx Communication Service', 'Servicio de comunicación MedEx');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_fix_lang5 t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang5 t ON c.constant_name = t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_fix_lang5 t
+JOIN lang_constants c ON c.constant_name = t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang5;
