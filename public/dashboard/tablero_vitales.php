@@ -6,9 +6,9 @@
  * One card per current admission with its latest vital signs take, filterable
  * by room, and the evolution of the chosen patient's vital signs in charts.
  * Data comes from tablero_vitales_data.php (OpenEMR's own vitals form, only the
- * takes recorded in each admission). Charts use the Chart.js bundled with OpenEMR,
- * with dashed reference lines at the usual alarm values and the line broken
- * where more than 8 h passed between two takes.
+ * takes recorded in each admission). Charts come from tablero_graficos.js (the
+ * Chart.js bundled with OpenEMR), with dashed reference lines at the usual alarm
+ * values and the line broken where more than 8 h passed between two takes.
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -34,6 +34,7 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
 <html>
 <head>
     <?php Header::setupHeader(['fontawesome', 'chart']); ?>
+    <script src="<?php echo attr($module_url . '/tablero_graficos.js?v=' . filemtime(__DIR__ . '/tablero_graficos.js')); ?>"></script>
     <title><?php echo xlt('Vital Signs Dashboard'); ?></title>
     <style>
         /* No background/colour here: inherit the active theme (light or dark). */
@@ -127,11 +128,10 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     var STALE_HOURS = 6;
     // Longer than this between two takes, the line is broken instead of joined.
     var GAP_MS = 8 * 3600 * 1000;
-    var GRID = 'rgba(128,128,128,0.2)';
     var admissions = [];
     var selected = null;
     var hours = 24;
-    var charts = {};
+    var charts = TableroGraficos.create({ noData: TXT.noData, gapMs: GAP_MS });
 
     function el(tag, cls, text) {
         var e = document.createElement(tag);
@@ -251,106 +251,6 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
             });
     }
 
-    // Dashed horizontal lines at reference values: [{ value, label, colour, axis }].
-    // The label sits on the side of its axis, on a box of the page background so
-    // it stays readable when a series line passes under it.
-    function pageBackground() {
-        var nodes = [document.body, document.documentElement];
-        for (var i = 0; i < nodes.length; i++) {
-            var c = getComputedStyle(nodes[i]).backgroundColor;
-            if (c && c !== 'transparent' && c !== 'rgba(0, 0, 0, 0)') { return c; }
-        }
-        return '#fff';
-    }
-    var refLines = {
-        id: 'vsRefLines',
-        afterDatasetsDraw: function (chart, args, opts) {
-            var area = chart.chartArea;
-            var ctx = chart.ctx;
-            (opts.lines || []).forEach(function (l) {
-                var scale = chart.scales[l.axis || 'y'];
-                if (!scale || l.value < scale.min || l.value > scale.max) { return; }
-                var y = scale.getPixelForValue(l.value);
-                ctx.save();
-                ctx.strokeStyle = l.colour;
-                ctx.fillStyle = l.colour;
-                ctx.lineWidth = 1;
-                ctx.setLineDash([6, 4]);
-                ctx.beginPath();
-                ctx.moveTo(area.left, y);
-                ctx.lineTo(area.right, y);
-                ctx.stroke();
-                ctx.font = '11px sans-serif';
-                ctx.textBaseline = 'bottom';
-                // labels of the right axis go on the right, so they do not overlap
-                // the left axis ones when both fall at about the same height
-                var right = (l.axis || 'y') === 'y1';
-                var w = ctx.measureText(l.label).width;
-                var x = right ? area.right - 4 - w : area.left + 4;
-                ctx.fillStyle = pageBackground();
-                ctx.fillRect(x - 2, y - 14, w + 4, 13);
-                ctx.fillStyle = l.colour;
-                ctx.textAlign = 'left';
-                ctx.fillText(l.label, x, y - 2);
-                ctx.restore();
-            });
-        }
-    };
-
-    function axis(color, extra) {
-        return Object.assign({ ticks: { color: color }, grid: { color: GRID } }, extra || {});
-    }
-
-    // scales: y (and y1, for a second axis on the right) on top of the common style.
-    function lineChart(id, datasets, scales, lines) {
-        if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-        var canvas = document.getElementById(id);
-        var box = canvas.parentNode;
-        var old = box.querySelector('.vs-nodata');
-        if (old) { old.remove(); }
-        var points = datasets.reduce(function (n, d) { return n + d.data.length; }, 0);
-        canvas.hidden = points === 0;
-        if (points === 0) {
-            box.appendChild(el('div', 'vs-nodata', TXT.noData));
-            return;
-        }
-        var color = getComputedStyle(document.body).color;
-        var allScales = {
-            x: axis(color, { type: 'time', time: { tooltipFormat: 'dd/MM HH:mm', displayFormats: { minute: 'HH:mm', hour: 'dd/MM HH:mm', day: 'dd/MM' } } })
-        };
-        Object.keys(scales).forEach(function (k) {
-            var s = scales[k];
-            if (s.title) { s.title = { display: true, text: s.title, color: color }; }
-            if (k === 'y1') { s.position = 'right'; s.grid = { drawOnChartArea: false }; }
-            allScales[k] = axis(color, s);
-        });
-        charts[id] = new Chart(canvas, {
-            type: 'line',
-            data: { datasets: datasets },
-            plugins: [refLines],
-            options: {
-                animation: false,
-                parsing: false,
-                maintainAspectRatio: false,
-                spanGaps: GAP_MS,
-                // the tooltip shows every value taken at the same time
-                interaction: { mode: 'x', intersect: false },
-                plugins: { legend: { labels: { color: color } }, vsRefLines: { lines: lines || [] } },
-                scales: allScales
-            }
-        });
-    }
-    function series(takes, key, label, colour, yAxis) {
-        return {
-            yAxisID: yAxis || 'y',
-            label: label,
-            borderColor: colour,
-            backgroundColor: colour,
-            pointRadius: 3,
-            data: takes.filter(function (t) { return t[key] !== null; }).map(function (t) { return { x: new Date(t.date).getTime(), y: t[key] }; })
-        };
-    }
-
     function loadSeries() {
         restore();
         fetch(DATA_URL + '?action=series&encounter=' + encodeURIComponent(selected.encounter) + '&hours=' + hours, { credentials: 'same-origin' })
@@ -360,17 +260,17 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
                 document.getElementById('vs-evo-empty').hidden = takes.length > 0;
                 document.getElementById('vs-evo-charts').hidden = takes.length === 0;
                 if (takes.length === 0) { return; }
-                lineChart('vs-c-bp', [
-                    series(takes, 'bps', TXT.systolic, '#e74c3c'),
-                    series(takes, 'bpd', TXT.diastolic, '#3498db'),
-                    series(takes, 'map', TXT.map, '#9b59b6')
+                charts.draw('vs-c-bp', [
+                    charts.series(takes, 'bps', TXT.systolic, '#e74c3c'),
+                    charts.series(takes, 'bpd', TXT.diastolic, '#3498db'),
+                    charts.series(takes, 'map', TXT.map, '#9b59b6')
                 ], { y: { suggestedMin: 40, suggestedMax: 180 } }, [
                     { value: 65, label: TXT.map + ' 65', colour: '#9b59b6' }
                 ]);
                 // heart and respiratory rate move in very different ranges: one axis each
-                lineChart('vs-c-rate', [
-                    series(takes, 'pulse', TXT.hr, '#e67e22'),
-                    series(takes, 'respiration', TXT.rr, '#16a085', 'y1')
+                charts.draw('vs-c-rate', [
+                    charts.series(takes, 'pulse', TXT.hr, '#e67e22'),
+                    charts.series(takes, 'respiration', TXT.rr, '#16a085', 'y1')
                 ], {
                     y: { suggestedMin: 40, suggestedMax: 150, title: TXT.hr + ' (' + TXT.beatsMin + ')' },
                     y1: { suggestedMin: 0, suggestedMax: 50, title: TXT.rr + ' (' + TXT.breathsMin + ')' }
@@ -380,12 +280,12 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
                     { value: 20, label: TXT.rr + ' 20', colour: '#16a085', axis: 'y1' },
                     { value: 12, label: TXT.rr + ' 12', colour: '#16a085', axis: 'y1' }
                 ]);
-                lineChart('vs-c-temp', [series(takes, 'temp_c', TXT.temp, '#c0392b')],
+                charts.draw('vs-c-temp', [charts.series(takes, 'temp_c', TXT.temp, '#c0392b')],
                     { y: { suggestedMin: 35, suggestedMax: 40 } }, [
                         { value: 38, label: '38 °C', colour: '#c0392b' },
                         { value: 36, label: '36 °C', colour: '#c0392b' }
                     ]);
-                lineChart('vs-c-spo2', [series(takes, 'spo2', TXT.spo2, '#2980b9')],
+                charts.draw('vs-c-spo2', [charts.series(takes, 'spo2', TXT.spo2, '#2980b9')],
                     { y: { suggestedMin: 85, max: 100 } }, [
                         { value: 90, label: TXT.spo2 + ' 90 %', colour: '#2980b9' }
                     ]);
