@@ -6,7 +6,9 @@
  * One card per current admission with its latest vital signs take, filterable
  * by room, and the evolution of the chosen patient's vital signs in charts.
  * Data comes from tablero_vitales_data.php (OpenEMR's own vitals form, only the
- * takes recorded in each admission). Charts use the Chart.js bundled with OpenEMR.
+ * takes recorded in each admission). Charts use the Chart.js bundled with OpenEMR,
+ * with dashed reference lines at the usual alarm values and the line broken
+ * where more than 8 h passed between two takes.
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -118,9 +120,14 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
         diastolic: <?php echo js_escape(xl('Diastolic')); ?>,
         noAdmissions: <?php echo js_escape(xl('There are no patients admitted.')); ?>,
         loadError: <?php echo js_escape(xl('The data could not be loaded.')); ?>,
-        noData: <?php echo js_escape(xl('No data in this period')); ?>
+        noData: <?php echo js_escape(xl('No data in this period')); ?>,
+        beatsMin: <?php echo js_escape(xl('beats/min')); ?>,
+        breathsMin: <?php echo js_escape(xl('breaths/min')); ?>
     };
     var STALE_HOURS = 6;
+    // Longer than this between two takes, the line is broken instead of joined.
+    var GAP_MS = 8 * 3600 * 1000;
+    var GRID = 'rgba(128,128,128,0.2)';
     var admissions = [];
     var selected = null;
     var hours = 24;
@@ -244,7 +251,40 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
             });
     }
 
-    function lineChart(id, datasets, opts) {
+    // Dashed horizontal lines at reference values: [{ value, label, colour, axis }].
+    var refLines = {
+        id: 'vsRefLines',
+        afterDatasetsDraw: function (chart, args, opts) {
+            var area = chart.chartArea;
+            var ctx = chart.ctx;
+            (opts.lines || []).forEach(function (l) {
+                var scale = chart.scales[l.axis || 'y'];
+                if (!scale || l.value < scale.min || l.value > scale.max) { return; }
+                var y = scale.getPixelForValue(l.value);
+                ctx.save();
+                ctx.strokeStyle = l.colour;
+                ctx.fillStyle = l.colour;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(area.left, y);
+                ctx.lineTo(area.right, y);
+                ctx.stroke();
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(l.label, area.left + 4, y - 2);
+                ctx.restore();
+            });
+        }
+    };
+
+    function axis(color, extra) {
+        return Object.assign({ ticks: { color: color }, grid: { color: GRID } }, extra || {});
+    }
+
+    // scales: y (and y1, for a second axis on the right) on top of the common style.
+    function lineChart(id, datasets, scales, lines) {
         if (charts[id]) { charts[id].destroy(); delete charts[id]; }
         var canvas = document.getElementById(id);
         var box = canvas.parentNode;
@@ -257,25 +297,34 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
             return;
         }
         var color = getComputedStyle(document.body).color;
+        var allScales = {
+            x: axis(color, { type: 'time', time: { tooltipFormat: 'dd/MM HH:mm', displayFormats: { minute: 'HH:mm', hour: 'dd/MM HH:mm', day: 'dd/MM' } } })
+        };
+        Object.keys(scales).forEach(function (k) {
+            var s = scales[k];
+            if (s.title) { s.title = { display: true, text: s.title, color: color }; }
+            if (k === 'y1') { s.position = 'right'; s.grid = { drawOnChartArea: false }; }
+            allScales[k] = axis(color, s);
+        });
         charts[id] = new Chart(canvas, {
             type: 'line',
             data: { datasets: datasets },
+            plugins: [refLines],
             options: {
                 animation: false,
                 parsing: false,
                 maintainAspectRatio: false,
-                spanGaps: true,
-                plugins: { legend: { labels: { color: color } } },
-                scales: {
-                    x: { type: 'time', time: { tooltipFormat: 'dd/MM HH:mm', displayFormats: { minute: 'HH:mm', hour: 'dd/MM HH:mm', day: 'dd/MM' } },
-                         ticks: { color: color }, grid: { color: 'rgba(128,128,128,0.2)' } },
-                    y: Object.assign({ ticks: { color: color }, grid: { color: 'rgba(128,128,128,0.2)' } }, opts || {})
-                }
+                spanGaps: GAP_MS,
+                // the tooltip shows every value taken at the same time
+                interaction: { mode: 'x', intersect: false },
+                plugins: { legend: { labels: { color: color } }, vsRefLines: { lines: lines || [] } },
+                scales: allScales
             }
         });
     }
-    function series(takes, key, label, colour) {
+    function series(takes, key, label, colour, yAxis) {
         return {
+            yAxisID: yAxis || 'y',
             label: label,
             borderColor: colour,
             backgroundColor: colour,
@@ -297,18 +346,47 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
                     series(takes, 'bps', TXT.systolic, '#e74c3c'),
                     series(takes, 'bpd', TXT.diastolic, '#3498db'),
                     series(takes, 'map', TXT.map, '#9b59b6')
+                ], { y: { suggestedMin: 40, suggestedMax: 180 } }, [
+                    { value: 65, label: TXT.map + ' 65', colour: '#9b59b6' }
                 ]);
+                // heart and respiratory rate move in very different ranges: one axis each
                 lineChart('vs-c-rate', [
                     series(takes, 'pulse', TXT.hr, '#e67e22'),
-                    series(takes, 'respiration', TXT.rr, '#16a085')
+                    series(takes, 'respiration', TXT.rr, '#16a085', 'y1')
+                ], {
+                    y: { suggestedMin: 40, suggestedMax: 150, title: TXT.hr + ' (' + TXT.beatsMin + ')' },
+                    y1: { suggestedMin: 0, suggestedMax: 50, title: TXT.rr + ' (' + TXT.breathsMin + ')' }
+                }, [
+                    { value: 100, label: TXT.hr + ' 100', colour: '#e67e22' },
+                    { value: 60, label: TXT.hr + ' 60', colour: '#e67e22' },
+                    { value: 20, label: TXT.rr + ' 20', colour: '#16a085', axis: 'y1' },
+                    { value: 12, label: TXT.rr + ' 12', colour: '#16a085', axis: 'y1' }
                 ]);
-                lineChart('vs-c-temp', [series(takes, 'temp_c', TXT.temp, '#c0392b')]);
-                lineChart('vs-c-spo2', [series(takes, 'spo2', TXT.spo2, '#2980b9')], { suggestedMin: 85, suggestedMax: 100 });
+                lineChart('vs-c-temp', [series(takes, 'temp_c', TXT.temp, '#c0392b')],
+                    { y: { suggestedMin: 35, suggestedMax: 40 } }, [
+                        { value: 38, label: '38 °C', colour: '#c0392b' },
+                        { value: 36, label: '36 °C', colour: '#c0392b' }
+                    ]);
+                lineChart('vs-c-spo2', [series(takes, 'spo2', TXT.spo2, '#2980b9')],
+                    { y: { suggestedMin: 85, max: 100 } }, [
+                        { value: 90, label: TXT.spo2 + ' 90 %', colour: '#2980b9' }
+                    ]);
             });
+    }
+
+    // The smallest period that still shows the latest take, so the charts never
+    // open empty for a patient whose last vital signs are older than 24 h.
+    function rangeFor(a) {
+        var h = a.last && a.last.hours_ago !== null ? a.last.hours_ago : 0;
+        return h <= 24 ? 24 : (h <= 48 ? 48 : (h <= 168 ? 168 : 0));
     }
 
     function showEvolution(a) {
         selected = a;
+        hours = rangeFor(a);
+        document.querySelectorAll('#vs-range button').forEach(function (x) {
+            x.classList.toggle('active', parseInt(x.dataset.hours, 10) === hours);
+        });
         document.getElementById('vs-evo-name').textContent = a.patient + ' — ' + TXT.room + ' ' + (a.room || '—') + ' · ' + TXT.bed + ' ' + (a.bed || '—');
         document.getElementById('vs-evolution').hidden = false;
         render();

@@ -3104,3 +3104,29 @@ JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang6;
+
+-- Units on the axes of the vital signs dashboard charts.
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang7;
+CREATE TEMPORARY TABLE nursing_fix_lang7 (cn TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_fix_lang7 (cn, es) VALUES
+  ('beats/min', 'lat/min'),
+  ('breaths/min', 'resp/min');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_fix_lang7 t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang7 t ON c.constant_name = t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_fix_lang7 t
+JOIN lang_constants c ON c.constant_name = t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang7;
