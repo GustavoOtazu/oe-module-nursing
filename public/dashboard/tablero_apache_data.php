@@ -10,9 +10,8 @@
  *                                      (H = 0: the whole admission)
  *
  * The time of a score is the record time entered in the form (hora_registro) on
- * the day it was saved. The day comes from forms.date, written by the database
- * NOW() (UTC on the server), so it is read as a Unix timestamp and shown in
- * OpenEMR's time zone.
+ * the day it was saved (forms.date), or the time it was saved when the form has
+ * no record time.
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -47,8 +46,8 @@ $inpatientCatid = $catRow !== false ? (int) ($catRow['pc_catid'] ?? 0) : 0;
 // saved; a time later than the save (entered before midnight, saved after) is
 // from the day before.
 $moment = static function (array $r): ?int {
-    $saved = (int) ($r['saved_ts'] ?? 0);
-    if ($saved <= 0) {
+    $saved = strtotime((string) ($r['saved_at'] ?? ''));
+    if ($saved === false) {
         return null;
     }
     $time = (string) ($r['hora_registro'] ?? '');
@@ -87,7 +86,7 @@ $score = static function (array $r) use ($moment): array {
 };
 
 $scoresSql = "SELECT a.id, a.hora_registro, a.apache_total, a.pts_fisiologicos, a.pts_edad, a.pts_cronicos,
-                     a.apache_evaluados, a.glasgow, a.pao2, a.fio2, UNIX_TIMESTAMP(f.date) AS saved_ts
+                     a.apache_evaluados, a.glasgow, a.pao2, a.fio2, f.date AS saved_at
                 FROM form_escala_apache a
                 JOIN forms f ON f.form_id = a.id AND f.formdir = 'escala_apache' AND f.deleted = 0
                WHERE a.pid = ? AND f.encounter = ?";

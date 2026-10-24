@@ -138,6 +138,9 @@
                     parsing: false,
                     maintainAspectRatio: false,
                     spanGaps: settings.gapMs,
+                    // a point on a fixed limit (Glasgow 15, SpO2 100 %) is drawn whole,
+                    // not cut by the edge of the chart
+                    clip: 6,
                     // the tooltip shows every value recorded at the same time
                     interaction: { mode: 'x', intersect: false },
                     plugins: { legend: { labels: { color: color } }, vsRefLines: { lines: lines || [] } },
