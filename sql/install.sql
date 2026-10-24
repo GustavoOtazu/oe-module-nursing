@@ -202,7 +202,7 @@ JOIN (SELECT 'Inpatient List' cn,'Lista de Internados' def UNION ALL
       SELECT 'New Admission','Nuevo Ingreso' UNION ALL
       SELECT 'Nursing Options','Opciones de Enfermería' UNION ALL
       SELECT 'Nursing Applications','Aplicaciones de Enfermería' UNION ALL
-      SELECT 'Nursing Care Bundle','Bundle de Cuidados' UNION ALL
+      SELECT 'Nursing Care Bundle','Paquete de Cuidados de Enfermería' UNION ALL
       SELECT 'Nursing Evaluation','Evaluación de Enfermería' UNION ALL
       SELECT 'Ventilation Record','Registro de Ventilación Mecánica' UNION ALL
       SELECT 'Wound Care','Curaciones' UNION ALL
@@ -284,8 +284,8 @@ JOIN (SELECT 'Create Mode' cn,'Modo Creación' def UNION ALL
       SELECT 'Plasma Expanders','Expansores de Plasma' UNION ALL
       SELECT 'Blood and Blood Products','Sangre y Hemoderivados' UNION ALL
       SELECT 'Record Time','Hora de Registro' UNION ALL
-      SELECT 'New Care Bundle','Nuevo Bundle de Cuidados' UNION ALL
-      SELECT 'Edit Care Bundle','Editar Bundle de Cuidados' UNION ALL
+      SELECT 'New Care Bundle','Nuevo Paquete de Cuidados' UNION ALL
+      SELECT 'Edit Care Bundle','Editar Paquete de Cuidados' UNION ALL
       SELECT 'Patient Position','Posición del Paciente' UNION ALL
       SELECT 'Oral Rinse','Enjuague Bucal' UNION ALL
       SELECT 'Hand Hygiene Pre/Post Suctioning','Higiene de Manos Pre/Post Aspiración' UNION ALL
@@ -393,7 +393,7 @@ JOIN (SELECT 'Nursing' cn,'Enfermería' es,'Pflege' de,'Enfermagem' pt_eu,'Enfer
       SELECT 'Wound Care','Curaciones','Wundversorgung','Cuidados de Feridas','Cuidados de Feridas' UNION ALL
       SELECT 'Nursing Wound Care','Registro de Curaciones de Enfermería','Pflegewundversorgung','Cuidados de Feridas de Enfermagem','Cuidados de Feridas de Enfermagem' UNION ALL
       SELECT 'Nursing Applications','Aplicaciones de Enfermería','Pflegeanwendungen','Aplicações de Enfermagem','Aplicações de Enfermagem' UNION ALL
-      SELECT 'Nursing Care Bundle','Bundle de Cuidados de Enfermería','Pflegebündel','Bundle de Cuidados de Enfermagem','Bundle de Cuidados de Enfermagem' UNION ALL
+      SELECT 'Nursing Care Bundle','Paquete de Cuidados de Enfermería','Pflegebündel','Bundle de Cuidados de Enfermagem','Bundle de Cuidados de Enfermagem' UNION ALL
       SELECT 'Nursing Evaluation','Evaluación de Enfermería','Pflegebewertung','Avaliação de Enfermagem','Avaliação de Enfermagem' UNION ALL
       SELECT 'Ventilation Record','Registro de Ventilación Mecánica','Beatmungsprotokoll','Registo de Ventilação','Registro de Ventilação' UNION ALL
       SELECT 'Access denied','Acceso denegado','Zugriff verweigert','Acesso negado','Acesso negado' UNION ALL
@@ -419,8 +419,8 @@ JOIN (SELECT 'Nursing' cn,'Enfermería' es,'Pflege' de,'Enfermagem' pt_eu,'Enfer
       SELECT 'Blood and Blood Products','Sangre y Hemoderivados','Blut und Blutprodukte','Sangue e Hemoderivados','Sangue e Hemoderivados' UNION ALL
       SELECT 'Record Time','Hora de Registro','Aufzeichnungszeit','Hora de Registo','Hora de Registro' UNION ALL
       -- Cuidados
-      SELECT 'New Care Bundle','Nuevo Bundle de Cuidados','Neues Pflegebündel','Novo Bundle de Cuidados','Novo Bundle de Cuidados' UNION ALL
-      SELECT 'Edit Care Bundle','Editar Bundle de Cuidados','Pflegebündel bearbeiten','Editar Bundle de Cuidados','Editar Bundle de Cuidados' UNION ALL
+      SELECT 'New Care Bundle','Nuevo Paquete de Cuidados','Neues Pflegebündel','Novo Bundle de Cuidados','Novo Bundle de Cuidados' UNION ALL
+      SELECT 'Edit Care Bundle','Editar Paquete de Cuidados','Pflegebündel bearbeiten','Editar Bundle de Cuidados','Editar Bundle de Cuidados' UNION ALL
       SELECT 'Patient Position','Posición del Paciente','Patientenposition','Posição do Paciente','Posição do Paciente' UNION ALL
       SELECT 'Oral Rinse','Enjuague Bucal','Mundspülung','Higiene Oral','Higiene Oral' UNION ALL
       SELECT 'Hand Hygiene Pre/Post Suctioning','Higiene de Manos Pre/Post Aspiración','Händehygiene vor/nach Absaugung','Higiene das Mãos Pré/Pós Aspiração','Higiene das Mãos Pré/Pós Aspiração' UNION ALL
@@ -565,10 +565,10 @@ JOIN (
   SELECT 'NURSING APPLICATIONS RECORD',   'REGISTRO DE APLICACIONES DE ENFERMERÍA',    'PFLEGEANWENDUNGSPROTOKOLL',                              'REGISTO DE APLICAÇÕES DE ENFERMAGEM',               'REGISTRO DE APLICAÇÕES DE ENFERMAGEM' UNION ALL
   SELECT 'No application records found',  'No se encontraron registros de aplicaciones','Keine Anwendungsaufzeichnungen gefunden',               'Nenhum registo de aplicações encontrado',           'Nenhum registro de aplicações encontrado' UNION ALL
   -- Cuidados view/print
-  SELECT 'Care Bundle Detail',            'Detalle de Paquete de Cuidados',            'Pflegepaket-Detail',                                    'Detalhe de Pacote de Cuidados',                     'Detalhe de Pacote de Cuidados' UNION ALL
+  SELECT 'Care Bundle Detail',            'Detalle del Paquete de Cuidados',           'Pflegepaket-Detail',                                    'Detalhe de Pacote de Cuidados',                     'Detalhe de Pacote de Cuidados' UNION ALL
   SELECT 'Care Bundle List',              'Lista de Paquetes de Cuidados',             'Pflegepaketliste',                                      'Lista de Pacotes de Cuidados',                      'Lista de Pacotes de Cuidados' UNION ALL
-  SELECT 'NURSING CARE BUNDLE RECORD',    'REGISTRO DE PAQUETE DE CUIDADOS',           'PFLEGEPAKET-PROTOKOLL',                                 'REGISTO DE PACOTE DE CUIDADOS',                     'REGISTRO DE PACOTE DE CUIDADOS' UNION ALL
-  SELECT 'No care bundle records found',  'No se encontraron registros de cuidados',   'Keine Pflegepaket-Datensätze gefunden',                  'Nenhum registo de pacote de cuidados encontrado',   'Nenhum registro de pacote de cuidados encontrado' UNION ALL
+  SELECT 'NURSING CARE BUNDLE RECORD',    'REGISTRO DEL PAQUETE DE CUIDADOS',          'PFLEGEPAKET-PROTOKOLL',                                 'REGISTO DE PACOTE DE CUIDADOS',                     'REGISTRO DE PACOTE DE CUIDADOS' UNION ALL
+  SELECT 'No care bundle records found',  'No se encontraron registros del paquete de cuidados','Keine Pflegepaket-Datensätze gefunden',                  'Nenhum registo de pacote de cuidados encontrado',   'Nenhum registro de pacote de cuidados encontrado' UNION ALL
   SELECT 'Not specified',                 'No especificado',                           'Nicht angegeben',                                       'Não especificado',                                  'Não especificado' UNION ALL
   -- Evaluaciones view/print
   SELECT 'Evaluation Detail',             'Detalle de Evaluación',                     'Bewertungsdetail',                                      'Detalhe da Avaliação',                              'Detalhe da Avaliação' UNION ALL
@@ -1205,7 +1205,7 @@ CREATE TEMPORARY TABLE nursing_fix_lang (cn VARCHAR(255) NOT NULL, es TEXT NOT N
 INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Observations', 'Observaciones'),
   ('Encounter not found', 'Visita no encontrada'),
-  ('Care Bundle Record', 'Registro de bundle de cuidados'),
+  ('Care Bundle Record', 'Registro del Paquete de Cuidados'),
   ('Wound Care Record', 'Registro de curaciones'),
   ('Application Record', 'Registro de aplicaciones'),
   ('Recorded', 'Registrado'),
@@ -2375,3 +2375,34 @@ JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_core_lang3;
+
+-- -------------------------------------------------------------------------
+-- One Spanish term for the care bundle form: "Paquete de Cuidados" (as in the
+-- thesis). Replaces the earlier mixed translations ("Bundle"/"Paquete") and
+-- removes a duplicate definition of "Nursing Care Bundle".
+-- -------------------------------------------------------------------------
+DROP TEMPORARY TABLE IF EXISTS nursing_bundle_lang;
+CREATE TEMPORARY TABLE nursing_bundle_lang (cn VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_bundle_lang (cn, es) VALUES
+  ('Nursing Care Bundle', 'Paquete de Cuidados de Enfermería'),
+  ('New Care Bundle', 'Nuevo Paquete de Cuidados'),
+  ('Edit Care Bundle', 'Editar Paquete de Cuidados'),
+  ('Care Bundle Record', 'Registro del Paquete de Cuidados'),
+  ('Care Bundle Detail', 'Detalle del Paquete de Cuidados'),
+  ('Care Bundle List', 'Lista de Paquetes de Cuidados'),
+  ('NURSING CARE BUNDLE RECORD', 'REGISTRO DEL PAQUETE DE CUIDADOS'),
+  ('No care bundle records found', 'No se encontraron registros del paquete de cuidados');
+
+DELETE d1 FROM lang_definitions d1
+JOIN lang_definitions d2 ON d2.cons_id = d1.cons_id AND d2.lang_id = d1.lang_id AND d2.def_id < d1.def_id
+JOIN lang_constants c ON c.cons_id = d1.cons_id
+JOIN nursing_bundle_lang t ON c.constant_name = t.cn
+WHERE d1.lang_id IN (3, 4);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_bundle_lang t ON c.constant_name = t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_bundle_lang;
