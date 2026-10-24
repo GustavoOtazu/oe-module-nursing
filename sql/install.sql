@@ -3163,3 +3163,36 @@ JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang8;
+
+-- SOFA dashboard.
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang9;
+CREATE TEMPORARY TABLE nursing_fix_lang9 (cn TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_fix_lang9 (cn, es) VALUES
+  ('SOFA Dashboard', 'Tablero SOFA'),
+  ('Change from the previous score', 'Cambio respecto de la evaluación anterior'),
+  ('Increase of 2 or more points (Sepsis-3)', 'Aumento de 2 puntos o más (Sepsis-3)'),
+  ('More than 24 h without SOFA', 'Más de 24 h sin SOFA'),
+  ('No SOFA score recorded in this admission.', 'No hay evaluaciones SOFA registradas en esta internación.'),
+  ('No SOFA scores in this period.', 'No hay evaluaciones SOFA en este período.'),
+  ('Organ systems', 'Sistemas orgánicos'),
+  ('Record SOFA', 'Cargar SOFA'),
+  ('Systems', 'Sistemas');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_fix_lang9 t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE c.constant_name = t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang9 t ON c.constant_name = t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_fix_lang9 t
+JOIN lang_constants c ON c.constant_name = t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang9;

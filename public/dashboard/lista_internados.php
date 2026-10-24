@@ -273,6 +273,9 @@ $nursing_forms = [
                     <button id="btn-tablero-apache" class="btn btn-info btn-sm mb-2">
                         <i class="fa fa-calculator"></i>&nbsp;<?php echo xlt('APACHE II Dashboard'); ?>
                     </button>
+                    <button id="btn-tablero-sofa" class="btn btn-info btn-sm mb-2">
+                        <i class="fa fa-procedures"></i>&nbsp;<?php echo xlt('SOFA Dashboard'); ?>
+                    </button>
                     <br />
                     <?php if ($action_performed) : ?>
                     <div class="alert alert-success alert-dismissible show" role="alert">
@@ -589,6 +592,12 @@ $nursing_forms = [
             $('#btn-tablero-apache').on('click', function() {
                 top.restoreSession();
                 top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/dashboard/tablero_apache.php';
+            });
+
+            // SOFA DASHBOARD button
+            $('#btn-tablero-sofa').on('click', function() {
+                top.restoreSession();
+                top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/dashboard/tablero_sofa.php';
             });
 
             // DISCHARGE button

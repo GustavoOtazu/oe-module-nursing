@@ -124,6 +124,7 @@
             Object.keys(scales).forEach(function (k) {
                 var s = scales[k];
                 if (s.title) { s.title = { display: true, text: s.title, color: color }; }
+                if (s.ticks) { s.ticks = Object.assign({ color: color }, s.ticks); }
                 if (k === 'y1') { s.position = 'right'; s.grid = { drawOnChartArea: false }; }
                 // stacked bars: the x axis stacks too
                 if (s.stacked) { allScales.x.stacked = true; }
