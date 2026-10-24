@@ -2406,3 +2406,34 @@ SET d.definition = t.es
 WHERE d.lang_id IN (3, 4);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_bundle_lang;
+
+-- -------------------------------------------------------------------------
+-- One Spanish translation for texts that had two different ones (Patient
+-- Information, Severe, Item, and "Notes:" with and without a trailing space)
+-- and Spanish for two that were left in English (Config, Hits). The extra
+-- BINARY check keeps "Notes:" and "Notes: " apart (the collation pads spaces).
+-- -------------------------------------------------------------------------
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang4;
+CREATE TEMPORARY TABLE nursing_fix_lang4 (cn VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_fix_lang4 (cn, es) VALUES
+  ('Patient Information', 'Información del Paciente'),
+  ('Severe', 'Grave'),
+  ('Item', 'Ítem'),
+  ('Config', 'Configuración'),
+  ('Hits', 'Resultados'),
+  ('Notes:', 'Notas:'),
+  ('Notes: ', 'Notas: ');
+
+DELETE d1 FROM lang_definitions d1
+JOIN lang_definitions d2 ON d2.cons_id = d1.cons_id AND d2.lang_id = d1.lang_id AND d2.def_id < d1.def_id
+JOIN lang_constants c ON c.cons_id = d1.cons_id
+JOIN nursing_fix_lang4 t ON c.constant_name = t.cn AND BINARY c.constant_name = BINARY t.cn
+WHERE d1.lang_id IN (3, 4);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang4 t ON c.constant_name = t.cn AND BINARY c.constant_name = BINARY t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang4;
