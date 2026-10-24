@@ -252,6 +252,16 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
     }
 
     // Dashed horizontal lines at reference values: [{ value, label, colour, axis }].
+    // The label sits on the side of its axis, on a box of the page background so
+    // it stays readable when a series line passes under it.
+    function pageBackground() {
+        var nodes = [document.body, document.documentElement];
+        for (var i = 0; i < nodes.length; i++) {
+            var c = getComputedStyle(nodes[i]).backgroundColor;
+            if (c && c !== 'transparent' && c !== 'rgba(0, 0, 0, 0)') { return c; }
+        }
+        return '#fff';
+    }
     var refLines = {
         id: 'vsRefLines',
         afterDatasetsDraw: function (chart, args, opts) {
@@ -271,9 +281,17 @@ $module_url = $web_root . '/interface/modules/custom_modules/oe-module-nursing/p
                 ctx.lineTo(area.right, y);
                 ctx.stroke();
                 ctx.font = '11px sans-serif';
-                ctx.textAlign = 'left';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(l.label, area.left + 4, y - 2);
+                // labels of the right axis go on the right, so they do not overlap
+                // the left axis ones when both fall at about the same height
+                var right = (l.axis || 'y') === 'y1';
+                var w = ctx.measureText(l.label).width;
+                var x = right ? area.right - 4 - w : area.left + 4;
+                ctx.fillStyle = pageBackground();
+                ctx.fillRect(x - 2, y - 14, w + 4, 13);
+                ctx.fillStyle = l.colour;
+                ctx.textAlign = 'left';
+                ctx.fillText(l.label, x, y - 2);
                 ctx.restore();
             });
         }
