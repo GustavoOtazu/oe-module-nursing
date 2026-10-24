@@ -101,26 +101,33 @@
             var first = Math.min.apply(null, xs);
             var last = Math.max.apply(null, xs);
             var minSpan = settings.minSpanMs || 2 * 3600 * 1000;
-            var hour = 3600 * 1000;
+            var from, to;
             if (last - first >= minSpan) {
                 // some room before the first and after the last record, so they do not
-                // sit on the edge (under the reference line labels, or half a bar cut),
-                // rounded so the ticks fall on round times
+                // sit on the edge (under the reference line labels, or half a bar cut)
                 var pad = (last - first) * 0.06;
-                var round = last - first < 6 * hour ? hour / 6 : hour;
-                allScales.x.min = Math.floor((first - pad) / round) * round;
-                allScales.x.max = Math.ceil((last + pad) / round) * round;
+                from = first - pad;
+                to = last + pad;
             } else {
                 // With a single record (or records very close together) Chart.js zooms
                 // the time axis down to milliseconds: show at least minSpanMs around them.
-                var middle = (first + last) / 2;
-                // whole hours, so the ticks fall on round times
-                allScales.x.min = Math.floor((middle - minSpan / 2) / hour) * hour;
-                allScales.x.max = Math.ceil((middle + minSpan / 2) / hour) * hour;
-                // and one tick every hour or every few hours, not every 42 minutes
-                allScales.x.time.unit = 'hour';
-                allScales.x.ticks.stepSize = Math.max(1, Math.ceil((allScales.x.max - allScales.x.min) / hour / 12));
+                from = (first + last) / 2 - minSpan / 2;
+                to = (first + last) / 2 + minSpan / 2;
             }
+            // A fixed step between ticks (Chart.js alone picks steps like 44 minutes),
+            // the first that leaves at most 12 ticks, on round local times.
+            var minute = 60 * 1000;
+            var steps = [10, 15, 30, 60, 120, 180, 240, 360, 720, 1440, 2880, 10080];
+            var step = steps[steps.length - 1];
+            for (var i = 0; i < steps.length; i++) {
+                if ((to - from) / (steps[i] * minute) <= 12) { step = steps[i]; break; }
+            }
+            var ms = step * minute;
+            var offset = new Date(from).getTimezoneOffset() * minute;
+            allScales.x.min = Math.floor((from - offset) / ms) * ms + offset;
+            allScales.x.max = Math.ceil((to - offset) / ms) * ms + offset;
+            allScales.x.time.unit = step < 60 ? 'minute' : (step < 1440 ? 'hour' : 'day');
+            allScales.x.ticks.stepSize = step < 60 ? step : (step < 1440 ? step / 60 : step / 1440);
             Object.keys(scales).forEach(function (k) {
                 var s = scales[k];
                 if (s.title) { s.title = { display: true, text: s.title, color: color }; }
