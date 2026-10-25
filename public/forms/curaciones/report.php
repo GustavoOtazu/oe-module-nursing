@@ -13,7 +13,7 @@
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
 
-use OpenEMR\Common\Acl\AclMain;
+use OpenEMR\Modules\Nursing\NursingAcl;
 use OpenEMR\Common\Database\QueryUtils;
 
 function curaciones_report(int $pid, int $encounter, int $cols, int $id): void
@@ -21,7 +21,7 @@ function curaciones_report(int $pid, int $encounter, int $cols, int $id): void
     // Adds "Print" next to "Delete" in the encounter form list (see EncounterFormButtons).
     \OpenEMR\Modules\Nursing\EncounterFormButtons::render('curaciones', 'Nursing Wound Care', (int) $pid, (int) $encounter, (int) $id);
 
-    if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    if (!NursingAcl::check('encounters', 'notes')) {
         echo "<p>" . xlt("Access denied") . "</p>";
         return;
     }

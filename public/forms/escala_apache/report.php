@@ -13,7 +13,7 @@
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
 
-use OpenEMR\Common\Acl\AclMain;
+use OpenEMR\Modules\Nursing\NursingAcl;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Modules\Nursing\Scoring\ApacheIIScore;
 
@@ -22,7 +22,7 @@ function escala_apache_report(int $pid, int $encounter, int $cols, int $id): voi
     // Adds "Print" next to "Delete" in the encounter form list (see EncounterFormButtons).
     \OpenEMR\Modules\Nursing\EncounterFormButtons::render('escala_apache', 'APACHE II Score', (int) $pid, (int) $encounter, (int) $id);
 
-    if (!AclMain::aclCheckCore('encounters', 'notes')) {
+    if (!NursingAcl::check('encounters', 'notes')) {
         echo "<p>" . xlt("Access denied") . "</p>";
         return;
     }
