@@ -14,6 +14,9 @@ recorre todas las pantallas del módulo:
 | 06 | Encuentro | abrir la internación, formularios cargados (el resumen de cada uno) |
 | 07–16 | Los 10 formularios de enfermería | abrir uno nuevo, guardarlo, abrir el último para editar, imprimirlo |
 
+Si el inicio de sesión falla (o la sesión se pierde a mitad de camino), el usuario virtual
+espera de 10 a 20 s y vuelve a iniciar sesión, sin recorrer pantallas sin sesión.
+
 Entre pantallas hay una pausa de lectura (2 a 5 s) y antes de guardar un formulario, una
 pausa de carga (5 a 15 s). Cada respuesta se verifica: que la sesión siga abierta, que
 lleguen los datos y que el formulario se guarde.
@@ -31,6 +34,7 @@ observación `PRUEBA DE CARGA JMETER`; `borrar_datos_prueba.sql` los borra al te
 | `pacientes.csv` | Pacientes de prueba: `pid,encuentro,id de la internación` |
 | `credenciales.csv` | Usuarios de prueba, una línea `usuario,contraseña`. **No se sube a git** |
 | `borrar_datos_prueba.sql` | Borra los formularios que guardó la prueba |
+| `comparar_estres.py` | Compara dos corridas de estrés (errores y pedidos sin error por minuto según los usuarios activos) en una página HTML con gráficos |
 | `medir_encuentro.sh` | Mide la pantalla del encuentro (tiempo, tamaño y, con acceso a la base, consultas) con un usuario |
 
 ## Escenarios
@@ -49,6 +53,9 @@ JMETER=~/.local/opt/apache-jmeter-5.6.3/bin/jmeter ./ejecutar.sh rendimiento
 Los resultados quedan en `resultados/<escenario>-<fecha>/` (`resultados.jtl`, `jmeter.log` y
 el informe en `informe/index.html`). Cualquier propiedad del plan se puede cambiar al final,
 por ejemplo `./ejecutar.sh estres -Jusuarios=150`.
+
+Para comparar dos corridas de estrés a partir de la salida de consola de cada una:
+`python3 comparar_estres.py salida1.txt "Nombre 1" salida2.txt "Nombre 2" comparacion.html`.
 
 Para ver la prueba en vivo: `jmeter -Jlanguage=es -t plan_carga.jmx` abre la interfaz con
 el plan y sus visores (informe resumido, percentiles, gráfico de tiempos y árbol de resultados).

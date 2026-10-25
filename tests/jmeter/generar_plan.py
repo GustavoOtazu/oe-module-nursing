@@ -179,15 +179,36 @@ def visor(gui, nombre):
         f'<stringProp name="filename"></stringProp></ResultCollector><hashTree/>')
 
 
+def groovy(nombre, codigo, tipo='JSR223PostProcessor'):
+    return (
+        f'<{tipo} guiclass="TestBeanGUI" testclass="{tipo}" testname="{x(nombre)}">'
+        f'<stringProp name="scriptLanguage">groovy</stringProp><stringProp name="parameters"></stringProp>'
+        f'<stringProp name="filename"></stringProp><stringProp name="cacheKey">true</stringProp>'
+        f'<stringProp name="script">{x(codigo)}</stringProp></{tipo}><hashTree/>')
+
+
+# After the login: SESION = 1 only when OpenEMR did not show the login form again.
+MARCAR_SESION = groovy('Marcar si hay sesión', (
+    "def ok = prev.getResponseCode() == '200' && !prev.getResponseDataAsString().contains('id=\"login_form\"')\n"
+    "vars.put('SESION', ok ? '1' : '0')"))
+# On every response: if OpenEMR shows the login form, the session is gone (log in again).
+SESION_PERDIDA = groovy('Detectar sesión perdida', (
+    "if (prev.getResponseDataAsString().contains('id=\"login_form\"')) { vars.put('SESION', '0') }"))
+
+
 def inicio_sesion():
     login = http('Ingresar usuario y contraseña', '/interface/main/main_screen.php?auth=login&site=default',
-                 contiene('Entró a OpenEMR', 'id="login_form"', 'El inicio de sesión volvió a la pantalla de login', negar=True),
+                 MARCAR_SESION
+                 + contiene('Entró a OpenEMR', 'id="login_form"', 'El inicio de sesión volvió a la pantalla de login', negar=True),
                  'POST', {'new_login_session_management': '1', 'languageChoice': '4',
                           'authUser': '${USUARIO}', 'clearPass': '${CLAVE}'})
-    return ('<OnceOnlyController guiclass="OnceOnlyControllerGui" testclass="OnceOnlyController" testname="Una vez por usuario"/>'
-            '<hashTree>' + transaccion('00 Inicio de sesión',
-                                       http('Pantalla de inicio de sesión', '/interface/login/login.php?site=default') + login)
-            + '</hashTree>')
+    # Logs in when there is no session (first round, failed login or lost session); after
+    # a failed login it waits before trying again instead of going through the screens.
+    return si('Sin sesión: iniciar sesión', '${__jexl3("${SESION}" != "1")}', (
+        transaccion('00 Inicio de sesión',
+                    http('Pantalla de inicio de sesión', '/interface/login/login.php?site=default') + login)
+        + si('Si no pudo entrar', '${__jexl3("${SESION}" != "1")}',
+             pausa('Esperar antes de reintentar', '10000', '20000'))))
 
 
 def ronda():
@@ -264,7 +285,8 @@ def plan():
         '<hashTree><CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="Sesión del usuario">'
         '<collectionProp name="CookieManager.cookies"/><boolProp name="CookieManager.clearEachIteration">false</boolProp>'
         '<boolProp name="CookieManager.controlledByThreadGroup">false</boolProp></CookieManager><hashTree/>'
-        + inicio_sesion() + ronda() + '</hashTree>')
+        + SESION_PERDIDA + inicio_sesion()
+        + si('Con sesión: recorrer las pantallas', '${__jexl3("${SESION}" == "1")}', ronda()) + '</hashTree>')
     visores = (
         '<!-- Live views for the JMeter window. In command-line mode (ejecutar.sh) they write\n'
         '     nothing: results go to resultados.jtl and the HTML report. -->'
