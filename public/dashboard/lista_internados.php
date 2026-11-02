@@ -23,6 +23,7 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\AdmissionMovements;
+use OpenEMR\Modules\Nursing\AdmissionTeams;
 use OpenEMR\OeUI\OemrUI;
 
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
@@ -83,12 +84,19 @@ $inpatient = QueryUtils::fetchRecords(
     "SELECT f.*, CONCAT(p.fname, ' ', p.lname) AS paciente, p.pubpid AS pubpid,
             m.equipo AS equipo_actual,
             (SELECT CONCAT(UPPER(r.cuarto), ' / ', r.cama) FROM " . AdmissionMovements::TABLE . " r
-              WHERE r.encounter = f.encounter AND r.status = ? ORDER BY r.start_date, r.id LIMIT 1) AS cama_reservada
+              WHERE r.encounter = f.encounter AND r.status = ? ORDER BY r.start_date, r.id LIMIT 1) AS cama_reservada,
+            (SELECT GROUP_CONCAT(t.team ORDER BY t.start_date SEPARATOR ', ') FROM " . AdmissionTeams::TABLE . " t
+              WHERE t.encounter = f.encounter AND t.role = ? AND t.status = ?) AS equipos_compartidos,
+            (SELECT COUNT(*) FROM " . AdmissionTeams::TABLE . " t
+              WHERE t.encounter = f.encounter AND t.role = ? AND t.status = ?) AS interconsultas_pendientes
      FROM form_encounter AS f
      JOIN patient_data AS p ON p.pid = f.pid
      LEFT JOIN " . AdmissionMovements::TABLE . " AS m ON m.encounter = f.encounter AND m.status = ?
      WHERE f.pc_catid = ? AND f.date_end IS NULL",
-    [AdmissionMovements::RESERVED, AdmissionMovements::CURRENT, $inpatient_catid]
+    [AdmissionMovements::RESERVED,
+     AdmissionTeams::ROLE_SHARED, AdmissionTeams::ACTIVE,
+     AdmissionTeams::ROLE_CONSULT, AdmissionTeams::REQUESTED,
+     AdmissionMovements::CURRENT, $inpatient_catid]
 );
 
 // Nursing form definitions: form folder => display label
@@ -333,6 +341,13 @@ $nursing_forms = [
                                     <?php if ((string)($result['equipo_actual'] ?? '') !== '') : ?>
                                     <small class="d-block text-muted"><?php echo text((string)$result['equipo_actual']); ?></small>
                                     <?php endif; ?>
+                                    <?php if ((string)($result['equipos_compartidos'] ?? '') !== '') : ?>
+                                    <small class="d-block text-muted" title="<?php echo xla('Shared care'); ?>"><i class="fa fa-user-friends"></i> <?php echo text((string)$result['equipos_compartidos']); ?></small>
+                                    <?php endif; ?>
+                                    <?php $pend = (int)($result['interconsultas_pendientes'] ?? 0); ?>
+                                    <?php if ($pend > 0) : ?>
+                                    <span class="badge badge-warning"><i class="fa fa-comment-medical"></i> <?php echo text($pend === 1 ? xl('Pending consultation') : $pend . ' ' . xl('Pending consultations')); ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?php echo text(strtoupper((string)($result['cuarto'] ?? ''))); ?></td>
                                 <td>
@@ -353,7 +368,8 @@ $nursing_forms = [
                                             <button class="btn btn-outline-secondary btn-sm btn-alta" type="button"
                                                 id="<?php echo attr((string)($result['id'] ?? '')); ?>"
                                                 data-title="<?php echo attr(xlt('Discharge patient') . ': ' . (string)($result['paciente'] ?? '')); ?>"
-                                                data-paciente="<?php echo attr((string)($result['paciente'] ?? '')); ?>">
+                                                data-paciente="<?php echo attr((string)($result['paciente'] ?? '')); ?>"
+                                                data-compartidos="<?php echo attr((string)($result['equipos_compartidos'] ?? '')); ?>">
                                                 <i class="fa fa-sign-out-alt mr-1"></i><?php echo xlt('Discharge'); ?>
                                             </button>
                                         </div>
@@ -361,7 +377,8 @@ $nursing_forms = [
                                             <button class="btn btn-danger btn-sm btn-death" type="button"
                                                 data-id="<?php echo attr((string)($result['id'] ?? '')); ?>"
                                                 data-title="<?php echo attr(xlt('Register patient death') . ': ' . (string)($result['paciente'] ?? '')); ?>"
-                                                data-paciente="<?php echo attr((string)($result['paciente'] ?? '')); ?>">
+                                                data-paciente="<?php echo attr((string)($result['paciente'] ?? '')); ?>"
+                                                data-compartidos="<?php echo attr((string)($result['equipos_compartidos'] ?? '')); ?>">
                                                 <i class="fa fa-times-circle mr-1"></i><?php echo xlt('Deceased'); ?>
                                             </button>
                                         </div>
@@ -414,6 +431,11 @@ $nursing_forms = [
                                 <?php echo xlt('Are you sure you want to discharge the patient'); ?>:
                                 <b id="paciente_name"></b>?
                             </p>
+                            <div class="alert alert-warning" id="aviso_equipos" style="display:none;">
+                                <i class="fa fa-user-friends mr-1"></i><strong><?php echo xlt('Still following the patient'); ?>:</strong>
+                                <span id="aviso_equipos_lista"></span>.
+                                <small class="d-block"><?php echo xlt('Check that the handover was coordinated. Their participation in this ICU stay ends with the discharge.'); ?></small>
+                            </div>
                             <div class="row" id="body_death" style="display:none;">
                                 <div class="col-md-6">
                                     <label for="death_date"><?php echo xlt('Register date of death'); ?></label>
@@ -600,6 +622,13 @@ $nursing_forms = [
                 top.RTop.location = webroot_url + '/interface/modules/custom_modules/oe-module-nursing/public/dashboard/tablero_sofa.php';
             });
 
+            // Shared care teams still following the patient: a warning, not a block.
+            function avisoEquipos(lista) {
+                lista = (lista || '').toString();
+                $('#aviso_equipos_lista').text(lista);
+                $('#aviso_equipos').toggle(lista !== '');
+            }
+
             // DISCHARGE button
             $(document).on('click', '.btn-alta', function() {
                 var id_enc  = this.id;
@@ -612,6 +641,7 @@ $nursing_forms = [
                 $('#paciente_name').html('<b>' + pacient + '</b>');
                 $('#id_encounter').val(id_enc);
                 $('#nombre_paciente').val(pacient);
+                avisoEquipos($(this).data('compartidos'));
                 $('#modal_alta').modal('toggle');
             });
 
@@ -627,6 +657,7 @@ $nursing_forms = [
                 $('#paciente_name').html('<b>' + pacient + '</b>');
                 $('#id_encounter').val(id_enc);
                 $('#nombre_paciente').val(pacient);
+                avisoEquipos($(this).data('compartidos'));
                 $('#modal_alta').modal('toggle');
             });
 

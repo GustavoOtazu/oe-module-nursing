@@ -6,6 +6,8 @@
  * In edit mode the location (department, service, ward, bed, primary team) is
  * not overwritten: it changes through movements (transfer, bed reservation,
  * arrival, correction) and the page shows the admission's location history.
+ * It also shows the other teams of the ICU stay: shared care and consultations
+ * (src/AdmissionTeams.php).
  *
  * Usage:
  *   New admission : editar_internado.php?pid=X
@@ -29,6 +31,7 @@ use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Core\Header;
 use OpenEMR\Core\OEGlobalsBag;
 use OpenEMR\Modules\Nursing\AdmissionMovements;
+use OpenEMR\Modules\Nursing\AdmissionTeams;
 use OpenEMR\OeUI\OemrUI;
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
@@ -49,6 +52,7 @@ $patient       = false;
 $current       = null;
 $reservations  = [];
 $history       = [];
+$teams         = [];
 $discharged    = false;
 
 if ($viewmode) {
@@ -71,6 +75,7 @@ if ($viewmode) {
     $current      = AdmissionMovements::current($enc);
     $reservations = AdmissionMovements::reservations($enc);
     $history      = AdmissionMovements::history($enc);
+    $teams        = AdmissionTeams::forAdmission($enc);
     $discharged   = ($encounter_row['date_end'] ?? null) !== null;
 } else {
     if ($pid_new <= 0) {
@@ -112,6 +117,16 @@ $doneMessages = [
     'correct'  => ['success', xl('Current location corrected.')],
     'same'     => ['warning', xl('The patient is already in that location with that team. Nothing was recorded.')],
     'error'    => ['danger', xl('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.')],
+    'team_add'        => ['success', xl('Team added to shared care.')],
+    'team_end'        => ['success', xl('Participation ended.')],
+    'consult_request' => ['success', xl('Consultation requested.')],
+    'consult_answer'  => ['success', xl('Answer recorded.')],
+    'consult_cancel'  => ['success', xl('Consultation cancelled.')],
+    'team_primary'    => ['warning', xl('That team is the primary team.')],
+    'team_duplicate'  => ['warning', xl('That team already follows the patient.')],
+    'team_empty'      => ['warning', xl('Write the name of the team.')],
+    'answer_empty'    => ['warning', xl('Write the recommendation.')],
+    'team_error'      => ['danger', xl('The record could not be saved.')],
 ];
 
 /** A stored value shown with its label, or as stored if it is not one of the options. */
@@ -219,6 +234,12 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
         .mov-history tr.mov-current-row td { font-weight: 600; }
         .mov-history tr.mov-cancelled td { opacity: 0.6; }
         .mov-history small { display: block; opacity: 0.8; font-weight: normal; }
+        .team-block { border: 1px solid rgba(128, 128, 128, 0.35); border-left-width: 4px; border-radius: 6px; padding: 10px 14px; }
+        .team-primary { border-left-color: #2A78D6; }
+        .team-shared { border-left-color: #EB6834; }
+        .team-consult { border-left-color: #4A3AA7; }
+        .team-title { font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: .03em; opacity: .85; margin-bottom: 4px; }
+        .mov-cancelled { opacity: 0.6; }
     </style>
     <script>
         function cancelClicked() {
@@ -372,6 +393,127 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                 <?php endif; ?>
             </fieldset>
 
+            <fieldset class="p-3 mt-2" id="equipos">
+                <legend class="px-2"><?php echo xlt('Teams'); ?></legend>
+                <?php
+                $shared   = array_values(array_filter($teams, static fn(array $t): bool => $t['role'] === AdmissionTeams::ROLE_SHARED));
+                $consults = array_values(array_filter($teams, static fn(array $t): bool => $t['role'] === AdmissionTeams::ROLE_CONSULT));
+                $activeShared = array_values(array_filter($shared, static fn(array $t): bool => $t['status'] === AdmissionTeams::ACTIVE));
+                $endedShared  = array_values(array_filter($shared, static fn(array $t): bool => $t['status'] !== AdmissionTeams::ACTIVE));
+                $consultLabels = [
+                    AdmissionTeams::REQUESTED => [xl('Pending'), 'warning'],
+                    AdmissionTeams::ANSWERED  => [xl('Answered'), 'success'],
+                    AdmissionTeams::CANCELLED => [xl('Cancelled'), 'secondary'],
+                ];
+                ?>
+                <div class="team-block team-primary mb-3">
+                    <div class="team-title"><?php echo xlt('Primary team'); ?></div>
+                    <div class="d-flex flex-wrap align-items-center" style="gap:8px;">
+                        <strong><?php echo text($current !== null && (string) ($current['equipo'] ?? '') !== '' ? (string) $current['equipo'] : xl('Not recorded')); ?></strong>
+                        <?php if ($current !== null) : ?>
+                        <span class="text-muted small"><?php echo text(xl('Since') . ' ' . $fmt($current['start_date'])); ?></span>
+                        <?php endif; ?>
+                        <?php if (!$discharged) : ?>
+                        <button type="button" class="btn btn-outline-primary btn-sm ml-auto btn-mov" data-mode="transfer" data-key="team"><i class="fa fa-user-md mr-1"></i><?php echo xlt('Change primary team'); ?></button>
+                        <?php endif; ?>
+                    </div>
+                    <small class="text-muted"><?php echo xlt('The ICU team decides admission and discharge. It is changed with a transfer.'); ?></small>
+                </div>
+
+                <div class="team-block team-shared mb-3">
+                    <div class="team-title"><?php echo xlt('Shared care'); ?></div>
+                    <small class="text-muted d-block mb-2"><?php echo xlt('Teams that also follow the patient. They do not block the discharge.'); ?></small>
+                    <?php if ($activeShared === []) : ?>
+                    <p class="text-muted mb-2"><?php echo xlt('No other team follows the patient.'); ?></p>
+                    <?php endif; ?>
+                    <?php foreach ($activeShared as $t) : ?>
+                    <div class="d-flex flex-wrap align-items-center border rounded p-2 mb-2" style="gap:8px;">
+                        <span>
+                            <strong><?php echo text((string) $t['team']); ?></strong>
+                            <small class="d-block text-muted"><?php echo text(xl('Following since') . ' ' . $fmt($t['start_date']) . ' · ' . xl('Recorded by') . ' ' . (string) ($t['user'] ?? '')); ?></small>
+                            <?php if ((string) ($t['reason'] ?? '') !== '') : ?><small class="d-block"><em><?php echo text((string) $t['reason']); ?></em></small><?php endif; ?>
+                        </span>
+                        <?php if (!$discharged) : ?>
+                        <form method="post" action="<?php echo attr($saveUrl); ?>" class="ml-auto d-flex flex-wrap" style="gap:6px;">
+                            <input type="hidden" name="csrf_token_form" value="<?php echo attr($csrf); ?>">
+                            <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
+                            <input type="hidden" name="team_id" value="<?php echo attr((string) $t['id']); ?>">
+                            <input type="datetime-local" name="when" class="form-control form-control-sm" style="width:auto;" value="<?php echo attr(date('Y-m-d\TH:i')); ?>">
+                            <button type="submit" name="mode" value="team_end" class="btn btn-outline-warning btn-sm" onclick="top.restoreSession()"><i class="fa fa-user-minus mr-1"></i><?php echo xlt('End participation'); ?></button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if (!$discharged) : ?>
+                    <form method="post" action="<?php echo attr($saveUrl); ?>" class="form-inline flex-wrap" style="gap:6px;">
+                        <input type="hidden" name="csrf_token_form" value="<?php echo attr($csrf); ?>">
+                        <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
+                        <input type="text" name="team" class="form-control form-control-sm" maxlength="100" required placeholder="<?php echo xla('e.g. General Surgery'); ?>">
+                        <input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="<?php echo xla('Note'); ?>">
+                        <input type="datetime-local" name="when" class="form-control form-control-sm" value="<?php echo attr(date('Y-m-d\TH:i')); ?>">
+                        <button type="submit" name="mode" value="team_add" class="btn btn-outline-primary btn-sm" onclick="top.restoreSession()"><i class="fa fa-user-plus mr-1"></i><?php echo xlt('Add team'); ?></button>
+                    </form>
+                    <?php endif; ?>
+                    <?php if ($endedShared !== []) : ?>
+                    <details class="mt-2">
+                        <summary class="small"><?php echo xlt('Teams that no longer follow the patient'); ?> (<?php echo text((string) count($endedShared)); ?>)</summary>
+                        <ul class="small mb-0 mt-1">
+                            <?php foreach ($endedShared as $t) : ?>
+                            <li><?php echo text((string) $t['team'] . ': ' . $fmt($t['start_date']) . ' — ' . $fmt($t['end_date']) . ((string) ($t['ended_by'] ?? '') !== '' ? ' · ' . xl('by') . ' ' . (string) $t['ended_by'] : '')); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </details>
+                    <?php endif; ?>
+                </div>
+
+                <div class="team-block team-consult">
+                    <div class="team-title"><?php echo xlt('Consultations'); ?></div>
+                    <small class="text-muted d-block mb-2"><?php echo xlt('A specialty is asked for an opinion; it does not take over the care and does not affect the discharge.'); ?></small>
+                    <?php if ($consults === []) : ?>
+                    <p class="text-muted mb-2"><?php echo xlt('No consultations requested.'); ?></p>
+                    <?php endif; ?>
+                    <?php foreach ($consults as $t) : ?>
+                        <?php $st = (string) $t['status']; ?>
+                    <div class="border rounded p-2 mb-2 <?php echo $st === AdmissionTeams::CANCELLED ? 'mov-cancelled' : ''; ?>">
+                        <div class="d-flex flex-wrap align-items-center" style="gap:8px;">
+                            <strong><?php echo text((string) $t['team']); ?></strong>
+                            <span class="badge badge-<?php echo attr($consultLabels[$st][1] ?? 'secondary'); ?>"><?php echo text($consultLabels[$st][0] ?? $st); ?></span>
+                            <small class="text-muted"><?php echo text(xl('Requested at') . ' ' . $fmt($t['start_date']) . ' · ' . xl('by') . ' ' . (string) ($t['user'] ?? '')); ?></small>
+                        </div>
+                        <?php if ((string) ($t['reason'] ?? '') !== '') : ?>
+                        <small class="d-block"><?php echo text(xl('Reason for the consultation') . ': ' . (string) $t['reason']); ?></small>
+                        <?php endif; ?>
+                        <?php if ($st === AdmissionTeams::ANSWERED) : ?>
+                        <div class="mt-1"><strong><?php echo xlt('Recommendation'); ?>:</strong> <?php echo text((string) $t['recommendation']); ?></div>
+                        <small class="text-muted"><?php echo text(xl('Answered at') . ' ' . $fmt($t['end_date']) . ' · ' . xl('Recorded by') . ' ' . (string) ($t['answered_by'] ?? '')); ?></small>
+                        <?php elseif ($st === AdmissionTeams::REQUESTED) : ?>
+                        <form method="post" action="<?php echo attr($saveUrl); ?>" class="mt-2">
+                            <input type="hidden" name="csrf_token_form" value="<?php echo attr($csrf); ?>">
+                            <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
+                            <input type="hidden" name="team_id" value="<?php echo attr((string) $t['id']); ?>">
+                            <textarea name="recommendation" class="form-control form-control-sm mb-2" rows="2" placeholder="<?php echo xla('Recommendation'); ?>"></textarea>
+                            <div class="d-flex flex-wrap" style="gap:6px;">
+                                <input type="datetime-local" name="when" class="form-control form-control-sm" style="width:auto;" value="<?php echo attr(date('Y-m-d\TH:i')); ?>" title="<?php echo xla('Answered at'); ?>">
+                                <button type="submit" name="mode" value="consult_answer" class="btn btn-success btn-sm" onclick="top.restoreSession()"><i class="fa fa-check mr-1"></i><?php echo xlt('Record answer'); ?></button>
+                                <button type="submit" name="mode" value="consult_cancel" class="btn btn-outline-danger btn-sm" onclick="top.restoreSession()"><i class="fa fa-times mr-1"></i><?php echo xlt('Cancel consultation'); ?></button>
+                            </div>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if (!$discharged) : ?>
+                    <form method="post" action="<?php echo attr($saveUrl); ?>" class="form-inline flex-wrap" style="gap:6px;">
+                        <input type="hidden" name="csrf_token_form" value="<?php echo attr($csrf); ?>">
+                        <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
+                        <input type="text" name="team" class="form-control form-control-sm" maxlength="100" required placeholder="<?php echo xla('e.g. Cardiology'); ?>">
+                        <input type="text" name="note" class="form-control form-control-sm" maxlength="255" style="min-width:16rem;" placeholder="<?php echo xla('Reason for the consultation'); ?>">
+                        <input type="datetime-local" name="when" class="form-control form-control-sm" value="<?php echo attr(date('Y-m-d\TH:i')); ?>">
+                        <button type="submit" name="mode" value="consult_request" class="btn btn-outline-primary btn-sm" onclick="top.restoreSession()"><i class="fa fa-comment-medical mr-1"></i><?php echo xlt('Request consultation'); ?></button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+            </fieldset>
+
             <fieldset class="p-3 mt-2">
                 <legend class="px-2"><?php echo xlt('Location history'); ?></legend>
                 <?php if ($history === []) : ?>
@@ -442,13 +584,15 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
         'transfer' => [xl('Transfer patient'), xl('The current location ends and the new one starts at the date and time below. Both stay in the history.'), xl('Date and time of the transfer')],
         'reserve'  => [xl('Reserve bed'), xl('The bed is assigned but the patient has not arrived yet. The current location does not change until the arrival is recorded.'), xl('Expected arrival')],
         'correct'  => [xl('Correct current location'), xl('Only to fix a data entry error. It does not record a transfer; the history keeps who corrected it and when.'), ''],
+        'team'     => [xl('Change primary team'), xl('Write the new primary team; the bed can stay the same. The change is recorded as a movement and both teams stay in the history.'), xl('Date and time of the change')],
     ]); ?>;
     $('.btn-mov').on('click', function () {
         var mode = $(this).data('mode');
+        var key = $(this).data('key') || mode;
         $('#mov-mode').val(mode);
-        $('#mov-title').text(movTexts[mode][0]);
-        $('#mov-help').text(movTexts[mode][1]);
-        $('#mov-when-label').text(movTexts[mode][2]);
+        $('#mov-title').text(movTexts[key][0]);
+        $('#mov-help').text(movTexts[key][1]);
+        $('#mov-when-label').text(movTexts[key][2]);
         $('.mov-when').toggle(mode !== 'correct');
         $('.mov-note').toggle(mode !== 'correct');
         $('#form-mov').show()[0].scrollIntoView({behavior: 'smooth', block: 'nearest'});

@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Save handler for inpatient admissions: new, edit, and the location movements
- * (transfer, bed reservation, arrival, cancellation and correction).
+ * Save handler for inpatient admissions: new, edit, the location movements
+ * (transfer, bed reservation, arrival, cancellation and correction) and the
+ * other teams of the ICU stay (shared care and consultations).
  *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
@@ -22,6 +23,7 @@ use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
 use OpenEMR\Common\Uuid\UuidRegistry;
 use OpenEMR\Modules\Nursing\AdmissionMovements;
+use OpenEMR\Modules\Nursing\AdmissionTeams;
 
 $session = SessionWrapperFactory::getInstance()->getActiveSession();
 
@@ -156,6 +158,49 @@ if (in_array($mode, $movementModes, true)) {
         $result = 'error';
     }
     header("Location: editar_internado.php?id=" . urlencode((string) $encounter_id) . "&done=" . urlencode($result));
+    exit;
+}
+
+$teamModes = ['team_add', 'team_end', 'consult_request', 'consult_answer', 'consult_cancel'];
+if (in_array($mode, $teamModes, true)) {
+    /** @var array<string, string|int|null>|false $feRow */
+    $feRow = $encounter_id > 0
+        ? QueryUtils::querySingleRow("SELECT pid, encounter, date, date_end FROM form_encounter WHERE id = ?", [$encounter_id])
+        : false;
+    if (!$feRow) {
+        die(xlt('Encounter not found'));
+    }
+    // Once the patient left the ICU only a pending consultation can still be answered.
+    if (($feRow['date_end'] ?? null) !== null && $mode !== 'consult_answer') {
+        die(xlt('Encounter not found'));
+    }
+    $fePid       = (int) $feRow['pid'];
+    $feEncounter = (int) $feRow['encounter'];
+    $user        = is_string($v = $session->get('authUser')) ? $v : '';
+    $team        = (string) filter_input(INPUT_POST, 'team');
+    $note        = (string) filter_input(INPUT_POST, 'note');
+    $teamId      = (int) filter_input(INPUT_POST, 'team_id', FILTER_SANITIZE_NUMBER_INT);
+    $when        = AdmissionTeams::clampWhen((string) filter_input(INPUT_POST, 'when'), (string) ($feRow['date'] ?? ''));
+
+    try {
+        match ($mode) {
+            'team_add'        => AdmissionTeams::addShared($fePid, $feEncounter, $team, $when, $user, $note),
+            'team_end'        => AdmissionTeams::endShared($teamId, $feEncounter, $when, $user),
+            'consult_request' => AdmissionTeams::requestConsult($fePid, $feEncounter, $team, $when, $user, $note),
+            'consult_answer'  => AdmissionTeams::answerConsult($teamId, $feEncounter, $when, $user, (string) filter_input(INPUT_POST, 'recommendation')),
+            'consult_cancel'  => AdmissionTeams::cancelConsult($teamId, $feEncounter, $user),
+        };
+        $result = $mode;
+    } catch (\DomainException $e) {
+        $result = match ($e->getMessage()) {
+            'primary'   => 'team_primary',
+            'duplicate' => 'team_duplicate',
+            default     => $mode === 'consult_answer' ? 'answer_empty' : 'team_empty',
+        };
+    } catch (\InvalidArgumentException) {
+        $result = 'team_error';
+    }
+    header("Location: editar_internado.php?id=" . urlencode((string) $encounter_id) . "&done=" . urlencode($result) . "#equipos");
     exit;
 }
 

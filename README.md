@@ -18,6 +18,13 @@ It was developed as an undergraduate thesis project at the Facultad Politécnica
 - Location changes made outside the module (e.g. by the hospital information system) are detected and recorded.
 - `form_encounter` keeps only the current location; the history is in the module's own table `nursing_admission_movement`.
 
+**Teams of the ICU stay** (same screen, section *Teams*)
+- The **primary team** is the ICU team, which decides admission and discharge. It stays in the location history and is changed with a movement.
+- **Shared care**: other teams that also follow the patient (e.g. General Surgery after an operation). They do not block the ICU discharge, which is the ICU team's decision, but the discharge warns that they are still following the patient. Their participation in the stay ends with the discharge or before, when the team stops following the patient.
+- **Consultations**: a specialty is asked for an opinion; it does not take over the care and does not affect the discharge. The request, the answer and the recommendation stay recorded.
+- The inpatient list shows the shared care teams and the pending consultations of each patient.
+- Stored in the module's own table `nursing_admission_team`. The distinction between shared care and consultations follows a comment in the module's RFC (openemr/openemr#11426).
+
 **Nursing forms** (each one also available from the encounter)
 - Wound care, applications, care bundle, nursing evaluation (with Glasgow), mechanical ventilation record.
 - Fluid balance, nutrition, SOFA score, APACHE II score, nursing care plan and progress note.
@@ -66,7 +73,7 @@ Then, in **Manage Modules**, **Disable** and **Enable** the module. Enabling it 
 
 ## Development
 
-The scoring classes (`src/Scoring`), the vital-sign take scoring and the location history rules have unit tests in `tests/`. They need PHPUnit and OpenEMR's autoloader; `NursingCardTest` also needs an OpenEMR database.
+The scoring classes (`src/Scoring`), the vital-sign take scoring, the location history rules and the team rules have unit tests in `tests/`. They need PHPUnit and OpenEMR's autoloader; `NursingCardTest` also needs an OpenEMR database.
 
 ## License
 

@@ -242,16 +242,19 @@ final class AdmissionMovements
         }
         $encounter = (int) $fe['encounter'];
         $current = self::current($encounter);
+        $end = self::endFor($date, $current !== null ? (string) $current['start_date'] : '');
         if ($current !== null) {
             QueryUtils::sqlStatementThrowException(
                 "UPDATE " . self::TABLE . " SET status = ?, end_date = ? WHERE id = ?",
-                [self::ENDED, self::endFor($date, (string) $current['start_date']), (int) $current['id']]
+                [self::ENDED, $end, (int) $current['id']]
             );
         }
         QueryUtils::sqlStatementThrowException(
             "UPDATE " . self::TABLE . " SET status = ? WHERE encounter = ? AND status = ?",
             [self::CANCELLED, $encounter, self::RESERVED]
         );
+        // The shared care teams stop following the patient in this stay.
+        AdmissionTeams::closeForDischarge($encounter, $end);
     }
 
     /** @return array<string, string|int|null>|null */

@@ -704,6 +704,31 @@ CREATE TABLE `nursing_admission_movement` (
 ) ENGINE=InnoDB;
 #EndIf
 
+-- Teams of an ICU stay besides the primary team (src/AdmissionTeams.php): shared
+-- care (another team that also follows the patient) and consultations (another
+-- specialty asked for an opinion). The primary team stays in the location history.
+#IfNotTable nursing_admission_team
+CREATE TABLE `nursing_admission_team` (
+  `id`             bigint(20)   NOT NULL AUTO_INCREMENT,
+  `pid`            bigint(20)   NOT NULL,
+  `encounter`      bigint(20)   NOT NULL COMMENT 'form_encounter.encounter of the admission',
+  `role`           varchar(16)  NOT NULL COMMENT 'shared, consult',
+  `team`           varchar(100) NOT NULL COMMENT 'team or specialty',
+  `status`         varchar(16)  NOT NULL COMMENT 'shared: active, ended; consult: requested, answered, cancelled',
+  `start_date`     datetime     NOT NULL COMMENT 'shared: following since; consult: requested at',
+  `end_date`       datetime     DEFAULT NULL COMMENT 'shared: until; consult: answered or cancelled at',
+  `reason`         varchar(255) DEFAULT NULL COMMENT 'shared: note; consult: question asked',
+  `recommendation` text         DEFAULT NULL COMMENT 'consult: answer of the specialty',
+  `user`           varchar(255) DEFAULT NULL COMMENT 'who recorded it',
+  `answered_by`    varchar(255) DEFAULT NULL,
+  `ended_by`       varchar(255) DEFAULT NULL,
+  `created_at`     datetime     NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `encounter_role` (`encounter`, `role`, `status`),
+  KEY `pid` (`pid`)
+) ENGINE=InnoDB;
+#EndIf
+
 -- -------------------------------------------------------------------------
 -- UTI extension: fluid balance, nutrition, SOFA, APACHE II and care plan.
 -- Scores and totals are computed server-side by src/Scoring/*.
@@ -3196,3 +3221,71 @@ JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang9;
+
+-- Teams of the ICU stay: shared care and consultations.
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang10;
+CREATE TEMPORARY TABLE nursing_fix_lang10 (cn TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL, es TEXT CHARACTER SET utf8mb4 NOT NULL);
+INSERT INTO nursing_fix_lang10 (cn, es) VALUES
+  ('Teams', 'Equipos'),
+  ('Change primary team', 'Cambiar equipo principal'),
+  ('The ICU team decides admission and discharge. It is changed with a transfer.', 'El equipo de la UTI decide el ingreso y el egreso. Se cambia con un traslado.'),
+  ('Shared care', 'Atención compartida'),
+  ('Teams that also follow the patient. They do not block the discharge.', 'Equipos que también siguen al paciente. No bloquean el egreso.'),
+  ('Add team', 'Agregar equipo'),
+  ('Team', 'Equipo'),
+  ('e.g. General Surgery', 'p. ej. Cirugía General'),
+  ('e.g. Cardiology', 'p. ej. Cardiología'),
+  ('Following since', 'Sigue al paciente desde'),
+  ('End participation', 'Cerrar participación'),
+  ('No other team follows the patient.', 'Ningún otro equipo sigue al paciente.'),
+  ('Teams that no longer follow the patient', 'Equipos que ya no siguen al paciente'),
+  ('until', 'hasta'),
+  ('Consultations', 'Interconsultas'),
+  ('A specialty is asked for an opinion; it does not take over the care and does not affect the discharge.', 'Se pide la opinión de una especialidad; no se hace cargo del paciente ni afecta el egreso.'),
+  ('Request consultation', 'Pedir interconsulta'),
+  ('Specialty', 'Especialidad'),
+  ('Reason for the consultation', 'Motivo de la interconsulta'),
+  ('Requested', 'Pedida'),
+  ('Answered', 'Respondida'),
+  ('Requested at', 'Pedida el'),
+  ('Answered at', 'Respondida el'),
+  ('Recommendation', 'Recomendación'),
+  ('Record answer', 'Registrar respuesta'),
+  ('Cancel consultation', 'Cancelar interconsulta'),
+  ('No consultations requested.', 'No hay interconsultas pedidas.'),
+  ('by', 'por'),
+  ('Team added to shared care.', 'Equipo agregado a la atención compartida.'),
+  ('Participation ended.', 'Participación cerrada.'),
+  ('Consultation requested.', 'Interconsulta pedida.'),
+  ('Answer recorded.', 'Respuesta registrada.'),
+  ('Consultation cancelled.', 'Interconsulta cancelada.'),
+  ('That team is the primary team.', 'Ese equipo es el equipo principal.'),
+  ('That team already follows the patient.', 'Ese equipo ya sigue al paciente.'),
+  ('Write the name of the team.', 'Escriba el nombre del equipo.'),
+  ('Write the recommendation.', 'Escriba la recomendación.'),
+  ('The record could not be saved.', 'No se pudo guardar el registro.'),
+  ('Still following the patient', 'Siguen al paciente'),
+  ('Check that the handover was coordinated. Their participation in this ICU stay ends with the discharge.', 'Verifique que se coordinó el pase. Su participación en esta estadía en la UTI termina con el egreso.'),
+  ('Pending consultations', 'Interconsultas pendientes'),
+  ('Pending consultation', 'Interconsulta pendiente'),
+  ('Write the new primary team; the bed can stay the same. The change is recorded as a movement and both teams stay in the history.', 'Escriba el nuevo equipo principal; la cama puede quedar igual. El cambio se registra como un movimiento y los dos equipos quedan en el historial.'),
+  ('Date and time of the change', 'Fecha y hora del cambio');
+
+INSERT INTO lang_constants (constant_name)
+SELECT t.cn FROM nursing_fix_lang10 t
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants c WHERE BINARY c.constant_name = BINARY t.cn);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+JOIN nursing_fix_lang10 t ON BINARY c.constant_name = BINARY t.cn
+SET d.definition = t.es
+WHERE d.lang_id IN (3, 4) AND (d.definition IS NULL OR d.definition = '');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id, t.es
+FROM nursing_fix_lang10 t
+JOIN lang_constants c ON BINARY c.constant_name = BINARY t.cn
+JOIN lang_languages ll ON ll.lang_id IN (3, 4)
+WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang10;
