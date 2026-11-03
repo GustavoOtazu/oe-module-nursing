@@ -233,6 +233,24 @@ final class AdmissionMovements
         });
     }
 
+    /**
+     * Records the primary team of the current location when it was never
+     * recorded, without touching the location and without a transfer. The row
+     * keeps who recorded it and when.
+     */
+    public static function setTeam(int $encounter, string $team, string $user): void
+    {
+        $team = mb_substr(trim($team), 0, 100);
+        $current = self::current($encounter);
+        if ($current === null || $team === '') {
+            throw new \InvalidArgumentException('The admission has no current location or the team is empty.');
+        }
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE " . self::TABLE . " SET equipo = ?, corrected_by = ?, corrected_at = NOW() WHERE id = ?",
+            [$team, $user, (int) $current['id']]
+        );
+    }
+
     /** Closes the history when the patient leaves (discharge or death). */
     public static function close(int $encounterId, string $date): void
     {

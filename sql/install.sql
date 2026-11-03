@@ -3275,6 +3275,7 @@ INSERT INTO nursing_fix_lang10 (cn, es) VALUES
   ('Professional (optional)', 'Profesional (opcional)'),
   ('Professional who answered (optional)', 'Profesional que respondió (opcional)'),
   ('Intensive Care', 'Terapia Intensiva'),
+  ('Primary team recorded.', 'Equipo principal cargado.'),
   ('e.g. Intensive Care', 'p. ej. Terapia Intensiva'),
   ('since', 'desde'),
   ('Not recorded yet', 'sin cargar'),

@@ -116,7 +116,7 @@ if ($mode === 'edit') {
     exit;
 }
 
-$movementModes = ['transfer', 'reserve', 'confirm', 'cancel', 'correct'];
+$movementModes = ['transfer', 'reserve', 'confirm', 'cancel', 'correct', 'team_set'];
 if (in_array($mode, $movementModes, true)) {
     /** @var array<string, string|int|null>|false $feRow */
     $feRow = $encounter_id > 0
@@ -158,6 +158,7 @@ if (in_array($mode, $movementModes, true)) {
             'confirm'  => AdmissionMovements::confirm($movementId, $feEncounter, $when, $user),
             'cancel'   => AdmissionMovements::cancel($movementId, $feEncounter, $user),
             'correct'  => AdmissionMovements::correct($feEncounter, $location, $user),
+            'team_set' => AdmissionMovements::setTeam($feEncounter, (string) $location['equipo'], $user),
         };
         $result = $mode;
     } catch (\DomainException) {

@@ -115,6 +115,7 @@ $doneMessages = [
     'confirm'  => ['success', xl('Arrival at the reserved bed recorded.')],
     'cancel'   => ['success', xl('Reservation cancelled.')],
     'correct'  => ['success', xl('Current location corrected.')],
+    'team_set' => ['success', xl('Primary team recorded.')],
     'same'     => ['warning', xl('The patient is already in that location with that team. Nothing was recorded.')],
     'error'    => ['danger', xl('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.')],
     'team_add'        => ['success', xl('Team added to shared care.')],
@@ -420,7 +421,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                         <?php else : ?>
                         <em class="text-warning"><?php echo xlt('Not recorded yet'); ?></em>
                             <?php if (!$discharged && $current !== null) : ?>
-                        <button type="button" class="btn btn-primary btn-sm ml-auto btn-mov" data-mode="correct" data-key="teamset"><i class="fa fa-user-md mr-1"></i><?php echo xlt('Record primary team'); ?></button>
+                        <button type="button" class="btn btn-primary btn-sm ml-auto btn-mov" data-mode="team_set" data-key="teamset"><i class="fa fa-user-md mr-1"></i><?php echo xlt('Record primary team'); ?></button>
                             <?php endif; ?>
                         <?php endif; ?>
                     </div>
@@ -609,8 +610,10 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
         $('#mov-title').text(movTexts[key][0]);
         $('#mov-help').text(movTexts[key][1]);
         $('#mov-when-label').text(movTexts[key][2]);
-        $('.mov-when').toggle(mode !== 'correct');
-        $('.mov-note').toggle(mode !== 'correct');
+        $('.mov-when').toggle(mode !== 'correct' && mode !== 'team_set');
+        $('.mov-note').toggle(mode !== 'correct' && mode !== 'team_set');
+        // Recording the primary team does not touch the location.
+        $('#form-mov select').closest('.form-group').toggle(mode !== 'team_set');
         if (key === 'teamset' || key === 'team') {
             $('#form-mov input[name=equipo]').val(key === 'teamset' ? <?php echo js_escape(xl('Intensive Care')); ?> : '').trigger('focus');
         }
