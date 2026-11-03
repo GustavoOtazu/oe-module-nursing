@@ -331,7 +331,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                         <dt><?php echo xlt('Department'); ?></dt><dd><?php echo text($label($departamentos, $current['departamento'])); ?></dd>
                         <dt><?php echo xlt('Service'); ?></dt><dd><?php echo text($label($servicios, $current['servicio'])); ?></dd>
                         <dt><?php echo xlt('Ward / Bed'); ?></dt><dd><?php echo text($label($cuartos, $current['cuarto']) . ' / ' . (string) ($current['cama'] ?? '')); ?></dd>
-                        <dt><?php echo xlt('Primary team'); ?></dt><dd><?php echo text((string) ($current['equipo'] ?? '') !== '' ? (string) $current['equipo'] : xl('Not recorded')); ?></dd>
+                        <dt><?php echo xlt('Primary team'); ?></dt><dd><?php echo text((string) ($current['equipo'] ?? '') !== '' ? (string) $current['equipo'] : xl('Not recorded yet')); ?></dd>
                         <dt><?php echo xlt('Since'); ?></dt><dd><?php echo text($fmt($current['start_date'])); ?></dd>
                     </dl>
                 </div>
