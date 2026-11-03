@@ -714,6 +714,7 @@ CREATE TABLE `nursing_admission_team` (
   `encounter`      bigint(20)   NOT NULL COMMENT 'form_encounter.encounter of the admission',
   `role`           varchar(16)  NOT NULL COMMENT 'shared, consult',
   `team`           varchar(100) NOT NULL COMMENT 'team or specialty',
+  `professional`   varchar(150) DEFAULT NULL COMMENT 'shared: physician of the team; consult: physician who answered',
   `status`         varchar(16)  NOT NULL COMMENT 'shared: active, ended; consult: requested, answered, cancelled',
   `start_date`     datetime     NOT NULL COMMENT 'shared: following since; consult: requested at',
   `end_date`       datetime     DEFAULT NULL COMMENT 'shared: until; consult: answered or cancelled at',
@@ -3269,7 +3270,10 @@ INSERT INTO nursing_fix_lang10 (cn, es) VALUES
   ('Pending consultations', 'Interconsultas pendientes'),
   ('Pending consultation', 'Interconsulta pendiente'),
   ('Write the new primary team; the bed can stay the same. The change is recorded as a movement and both teams stay in the history.', 'Escriba el nuevo equipo principal; la cama puede quedar igual. El cambio se registra como un movimiento y los dos equipos quedan en el historial.'),
-  ('Date and time of the change', 'Fecha y hora del cambio');
+  ('Date and time of the change', 'Fecha y hora del cambio'),
+  ('Professional', 'Profesional'),
+  ('Professional (optional)', 'Profesional (opcional)'),
+  ('Professional who answered (optional)', 'Profesional que respondió (opcional)');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_fix_lang10 t

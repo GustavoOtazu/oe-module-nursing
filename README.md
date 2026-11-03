@@ -22,6 +22,7 @@ It was developed as an undergraduate thesis project at the Facultad Politécnica
 - The **primary team** is the ICU team, which decides admission and discharge. It stays in the location history and is changed with a movement.
 - **Shared care**: other teams that also follow the patient (e.g. General Surgery after an operation). They do not block the ICU discharge, which is the ICU team's decision, but the discharge warns that they are still following the patient. Their participation in the stay ends with the discharge or before, when the team stops following the patient.
 - **Consultations**: a specialty is asked for an opinion; it does not take over the care and does not affect the discharge. The request, the answer and the recommendation stay recorded.
+- Each shared care team and each answered consultation can record the professional (optional): the physician of the team that follows the patient, or the one who answered.
 - The inpatient list shows the shared care teams and the pending consultations of each patient.
 - Stored in the module's own table `nursing_admission_team`. The distinction between shared care and consultations follows a comment in the module's RFC (openemr/openemr#11426).
 

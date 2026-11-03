@@ -430,6 +430,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     <div class="d-flex flex-wrap align-items-center border rounded p-2 mb-2" style="gap:8px;">
                         <span>
                             <strong><?php echo text((string) $t['team']); ?></strong>
+                            <?php if ((string) ($t['professional'] ?? '') !== '') : ?><span>— <?php echo text((string) $t['professional']); ?></span><?php endif; ?>
                             <small class="d-block text-muted"><?php echo text(xl('Following since') . ' ' . $fmt($t['start_date']) . ' · ' . xl('Recorded by') . ' ' . (string) ($t['user'] ?? '')); ?></small>
                             <?php if ((string) ($t['reason'] ?? '') !== '') : ?><small class="d-block"><em><?php echo text((string) $t['reason']); ?></em></small><?php endif; ?>
                         </span>
@@ -449,6 +450,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                         <input type="hidden" name="csrf_token_form" value="<?php echo attr($csrf); ?>">
                         <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
                         <input type="text" name="team" class="form-control form-control-sm" maxlength="100" required placeholder="<?php echo xla('e.g. General Surgery'); ?>">
+                        <input type="text" name="professional" class="form-control form-control-sm" maxlength="150" placeholder="<?php echo xla('Professional (optional)'); ?>">
                         <input type="text" name="note" class="form-control form-control-sm" maxlength="255" placeholder="<?php echo xla('Note'); ?>">
                         <input type="datetime-local" name="when" class="form-control form-control-sm" value="<?php echo attr(date('Y-m-d\TH:i')); ?>">
                         <button type="submit" name="mode" value="team_add" class="btn btn-outline-primary btn-sm" onclick="top.restoreSession()"><i class="fa fa-user-plus mr-1"></i><?php echo xlt('Add team'); ?></button>
@@ -485,6 +487,9 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                         <?php endif; ?>
                         <?php if ($st === AdmissionTeams::ANSWERED) : ?>
                         <div class="mt-1"><strong><?php echo xlt('Recommendation'); ?>:</strong> <?php echo text((string) $t['recommendation']); ?></div>
+                        <?php if ((string) ($t['professional'] ?? '') !== '') : ?>
+                        <small class="d-block"><?php echo text(xl('Professional') . ': ' . (string) $t['professional']); ?></small>
+                        <?php endif; ?>
                         <small class="text-muted"><?php echo text(xl('Answered at') . ' ' . $fmt($t['end_date']) . ' · ' . xl('Recorded by') . ' ' . (string) ($t['answered_by'] ?? '')); ?></small>
                         <?php elseif ($st === AdmissionTeams::REQUESTED) : ?>
                         <form method="post" action="<?php echo attr($saveUrl); ?>" class="mt-2">
@@ -492,6 +497,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                             <input type="hidden" name="encounter_id" value="<?php echo attr((string) $encounter_id); ?>">
                             <input type="hidden" name="team_id" value="<?php echo attr((string) $t['id']); ?>">
                             <textarea name="recommendation" class="form-control form-control-sm mb-2" rows="2" placeholder="<?php echo xla('Recommendation'); ?>"></textarea>
+                            <input type="text" name="professional" class="form-control form-control-sm mb-2" maxlength="150" placeholder="<?php echo xla('Professional who answered (optional)'); ?>">
                             <div class="d-flex flex-wrap" style="gap:6px;">
                                 <input type="datetime-local" name="when" class="form-control form-control-sm" style="width:auto;" value="<?php echo attr(date('Y-m-d\TH:i')); ?>" title="<?php echo xla('Answered at'); ?>">
                                 <button type="submit" name="mode" value="consult_answer" class="btn btn-success btn-sm" onclick="top.restoreSession()"><i class="fa fa-check mr-1"></i><?php echo xlt('Record answer'); ?></button>

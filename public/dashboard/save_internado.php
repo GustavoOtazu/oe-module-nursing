@@ -180,14 +180,15 @@ if (in_array($mode, $teamModes, true)) {
     $team        = (string) filter_input(INPUT_POST, 'team');
     $note        = (string) filter_input(INPUT_POST, 'note');
     $teamId      = (int) filter_input(INPUT_POST, 'team_id', FILTER_SANITIZE_NUMBER_INT);
+    $professional = (string) filter_input(INPUT_POST, 'professional');
     $when        = AdmissionTeams::clampWhen((string) filter_input(INPUT_POST, 'when'), (string) ($feRow['date'] ?? ''));
 
     try {
         match ($mode) {
-            'team_add'        => AdmissionTeams::addShared($fePid, $feEncounter, $team, $when, $user, $note),
+            'team_add'        => AdmissionTeams::addShared($fePid, $feEncounter, $team, $when, $user, $note, $professional),
             'team_end'        => AdmissionTeams::endShared($teamId, $feEncounter, $when, $user),
             'consult_request' => AdmissionTeams::requestConsult($fePid, $feEncounter, $team, $when, $user, $note),
-            'consult_answer'  => AdmissionTeams::answerConsult($teamId, $feEncounter, $when, $user, (string) filter_input(INPUT_POST, 'recommendation')),
+            'consult_answer'  => AdmissionTeams::answerConsult($teamId, $feEncounter, $when, $user, (string) filter_input(INPUT_POST, 'recommendation'), $professional),
             'consult_cancel'  => AdmissionTeams::cancelConsult($teamId, $feEncounter, $user),
         };
         $result = $mode;

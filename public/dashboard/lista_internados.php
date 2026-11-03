@@ -85,7 +85,7 @@ $inpatient = QueryUtils::fetchRecords(
             m.equipo AS equipo_actual,
             (SELECT CONCAT(UPPER(r.cuarto), ' / ', r.cama) FROM " . AdmissionMovements::TABLE . " r
               WHERE r.encounter = f.encounter AND r.status = ? ORDER BY r.start_date, r.id LIMIT 1) AS cama_reservada,
-            (SELECT GROUP_CONCAT(t.team ORDER BY t.start_date SEPARATOR ', ') FROM " . AdmissionTeams::TABLE . " t
+            (SELECT GROUP_CONCAT(CONCAT(t.team, IF(t.professional IS NULL, '', CONCAT(' (', t.professional, ')'))) ORDER BY t.start_date SEPARATOR ', ') FROM " . AdmissionTeams::TABLE . " t
               WHERE t.encounter = f.encounter AND t.role = ? AND t.status = ?) AS equipos_compartidos,
             (SELECT COUNT(*) FROM " . AdmissionTeams::TABLE . " t
               WHERE t.encounter = f.encounter AND t.role = ? AND t.status = ?) AS interconsultas_pendientes

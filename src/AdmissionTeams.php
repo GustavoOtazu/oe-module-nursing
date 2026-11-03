@@ -48,6 +48,7 @@ final class AdmissionTeams
     public const CANCELLED = 'cancelled';
 
     public const MAX_TEAM = 100;
+    public const MAX_PROFESSIONAL = 150;
 
     /**
      * Names of the shared care teams still following the patient.
@@ -127,7 +128,7 @@ final class AdmissionTeams
      *
      * @throws \DomainException if it is the primary team or already follows the patient
      */
-    public static function addShared(int $pid, int $encounter, string $team, string $when, string $user, ?string $note): void
+    public static function addShared(int $pid, int $encounter, string $team, string $when, string $user, ?string $note, ?string $professional = null): void
     {
         $primary = AdmissionMovements::current($encounter)['equipo'] ?? null;
         $conflict = self::sharedConflict(self::forAdmission($encounter), $team, is_string($primary) ? $primary : null);
@@ -136,9 +137,9 @@ final class AdmissionTeams
         }
         QueryUtils::sqlInsert(
             "INSERT INTO " . self::TABLE . "
-                (pid, encounter, role, team, status, start_date, reason, user, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())",
-            [$pid, $encounter, self::ROLE_SHARED, self::cut($team), self::ACTIVE, $when, self::blank($note), $user]
+                (pid, encounter, role, team, professional, status, start_date, reason, user, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+            [$pid, $encounter, self::ROLE_SHARED, self::cut($team), self::blank($professional, self::MAX_PROFESSIONAL), self::ACTIVE, $when, self::blank($note), $user]
         );
     }
 
@@ -170,8 +171,8 @@ final class AdmissionTeams
         );
     }
 
-    /** The specialty answered: its recommendation stays recorded. */
-    public static function answerConsult(int $id, int $encounter, string $when, string $user, string $recommendation): void
+    /** The specialty answered: its recommendation and, if given, who answered stay recorded. */
+    public static function answerConsult(int $id, int $encounter, string $when, string $user, string $recommendation, ?string $professional = null): void
     {
         $row = self::find($id, $encounter);
         if ($row === null || $row['role'] !== self::ROLE_CONSULT || $row['status'] !== self::REQUESTED) {
@@ -182,9 +183,9 @@ final class AdmissionTeams
         }
         $end = $when < (string) $row['start_date'] ? (string) $row['start_date'] : $when;
         QueryUtils::sqlStatementThrowException(
-            "UPDATE " . self::TABLE . " SET status = ?, end_date = ?, recommendation = ?, answered_by = ?
+            "UPDATE " . self::TABLE . " SET status = ?, end_date = ?, recommendation = ?, professional = ?, answered_by = ?
               WHERE id = ? AND status = ?",
-            [self::ANSWERED, $end, trim($recommendation), $user, $id, self::REQUESTED]
+            [self::ANSWERED, $end, trim($recommendation), self::blank($professional, self::MAX_PROFESSIONAL), $user, $id, self::REQUESTED]
         );
     }
 
@@ -246,10 +247,10 @@ final class AdmissionTeams
         return mb_substr(trim($team), 0, self::MAX_TEAM);
     }
 
-    private static function blank(?string $value): ?string
+    private static function blank(?string $value, int $max = 255): ?string
     {
         $value = $value === null ? '' : trim($value);
-        return $value === '' ? null : mb_substr($value, 0, 255);
+        return $value === '' ? null : mb_substr($value, 0, $max);
     }
 
     private static function norm(mixed $value): string
