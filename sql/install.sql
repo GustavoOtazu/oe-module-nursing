@@ -1286,7 +1286,7 @@ INSERT INTO nursing_fix_lang (cn, es) VALUES
   ('Reservation cancelled.', 'Reserva cancelada.'),
   ('Current location corrected.', 'Ubicación actual corregida.'),
   ('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.', 'No se pudo registrar el movimiento. Revise la fecha y la hora: no puede ser anterior al inicio de la ubicación actual.'),
-  ('Primary team', 'Equipo tratante'),
+  ('Primary team', 'Equipo principal'),
   ('e.g. Internal Medicine, General Surgery', 'p. ej. Clínica Médica, Cirugía General'),
   ('Current location', 'Ubicación actual'),
   ('Ward / Bed', 'Sala / Cama'),
@@ -3273,7 +3273,15 @@ INSERT INTO nursing_fix_lang10 (cn, es) VALUES
   ('Date and time of the change', 'Fecha y hora del cambio'),
   ('Professional', 'Profesional'),
   ('Professional (optional)', 'Profesional (opcional)'),
-  ('Professional who answered (optional)', 'Profesional que respondió (opcional)');
+  ('Professional who answered (optional)', 'Profesional que respondió (opcional)'),
+  ('Intensive Care', 'Terapia Intensiva'),
+  ('e.g. Intensive Care', 'p. ej. Terapia Intensiva'),
+  ('since', 'desde'),
+  ('Not recorded yet', 'sin cargar'),
+  ('Record primary team', 'Cargar equipo principal'),
+  ('The team in charge of the patient in the ICU; it decides admission and discharge.', 'Es el equipo a cargo del paciente en la UTI; decide el ingreso y el egreso.'),
+  ('No primary team has been recorded yet. Use "Record primary team" to record it.', 'Todavía no se indicó qué equipo está a cargo del paciente en la UTI. Para cargarlo, use «Cargar equipo principal».'),
+  ('Write the team in charge of the patient. It does not record a transfer: it only fills in the missing data; the history keeps who recorded it and when.', 'Escriba el equipo a cargo del paciente. No registra un traslado: solo completa el dato que faltaba, y en el historial queda quién lo cargó y cuándo.');
 
 INSERT INTO lang_constants (constant_name)
 SELECT t.cn FROM nursing_fix_lang10 t
@@ -3291,5 +3299,11 @@ FROM nursing_fix_lang10 t
 JOIN lang_constants c ON BINARY c.constant_name = BINARY t.cn
 JOIN lang_languages ll ON ll.lang_id IN (3, 4)
 WHERE NOT EXISTS (SELECT 1 FROM lang_definitions d WHERE d.cons_id = c.cons_id AND d.lang_id = ll.lang_id);
+
+-- «Primary team» was translated as «Equipo tratante»; the module now says «Equipo principal».
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+SET d.definition = 'Equipo principal'
+WHERE BINARY c.constant_name = BINARY 'Primary team' AND d.lang_id IN (3, 4) AND d.definition = 'Equipo tratante';
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang10;

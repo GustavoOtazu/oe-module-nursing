@@ -89,6 +89,14 @@ if ($mode === 'new') {
 
     (new FormService())->addForm($encounter, "New Patient Encounter", (int)$fe_id, "newpatient", $pid, $provider_id);
     AdmissionMovements::sync($inpatient_catid, (int) $fe_id);
+    // The first location of the admission gets the primary team written in the form.
+    $equipo = trim((string) filter_input(INPUT_POST, 'equipo'));
+    if ($equipo !== '') {
+        QueryUtils::sqlStatementThrowException(
+            "UPDATE " . AdmissionMovements::TABLE . " SET equipo = ? WHERE encounter = ? AND status = ?",
+            [mb_substr($equipo, 0, 100), $encounter, AdmissionMovements::CURRENT]
+        );
+    }
 
     header("Location: lista_internados.php?update=1");
     exit;
