@@ -3,10 +3,10 @@
 /**
  * Admission Teams
  *
- * The teams involved in an ICU stay besides the primary team. The primary team
- * (the ICU team, which decides admission and discharge) stays in the location
- * history (AdmissionMovements, column equipo); this class keeps the other two
- * kinds, which are not the same in hospital practice:
+ * The teams involved in an ICU stay besides the primary team. The module is for
+ * the ICU, so the primary team is always the ICU team, which decides admission
+ * and discharge. This class keeps the other two kinds, which are not the same in
+ * hospital practice:
  *
  *  - shared care: another team that also follows the patient and is
  *    responsible for part of the care (e.g. General Surgery after an
@@ -130,8 +130,9 @@ final class AdmissionTeams
      */
     public static function addShared(int $pid, int $encounter, string $team, string $when, string $user, ?string $note, ?string $professional = null): void
     {
-        $primary = AdmissionMovements::current($encounter)['equipo'] ?? null;
-        $conflict = self::sharedConflict(self::forAdmission($encounter), $team, is_string($primary) ? $primary : null);
+        // The primary team is always the ICU team.
+        $primary = function_exists('xl') ? xl('Intensive Care') : 'Intensive Care';
+        $conflict = self::sharedConflict(self::forAdmission($encounter), $team, $primary);
         if ($conflict !== null) {
             throw new \DomainException($conflict);
         }

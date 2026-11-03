@@ -3,10 +3,11 @@
 /**
  * Inpatient Admission Form — new and edit mode.
  *
- * In edit mode the location (department, service, ward, bed, primary team) is
+ * In edit mode the location (department, service, ward, bed) is
  * not overwritten: it changes through movements (transfer, bed reservation,
  * arrival, correction) and the page shows the admission's location history.
- * It also shows the other teams of the ICU stay: shared care and consultations
+ * It also shows the teams of the ICU stay: the primary team is always the ICU
+ * team, and the other teams are shared care and consultations
  * (src/AdmissionTeams.php).
  *
  * Usage:
@@ -115,7 +116,6 @@ $doneMessages = [
     'confirm'  => ['success', xl('Arrival at the reserved bed recorded.')],
     'cancel'   => ['success', xl('Reservation cancelled.')],
     'correct'  => ['success', xl('Current location corrected.')],
-    'team_set' => ['success', xl('Primary team recorded.')],
     'same'     => ['warning', xl('The patient is already in that location with that team. Nothing was recorded.')],
     'error'    => ['danger', xl('The movement could not be recorded. Check the date and time: it cannot be earlier than the start of the current location.')],
     'team_add'        => ['success', xl('Team added to shared care.')],
@@ -158,12 +158,11 @@ $arrOeUiSettings = [
 $oemr_ui = new OemrUI($arrOeUiSettings);
 
 /**
- * The department, service, ward and bed selects (and the team), preselected
- * with $values.
+ * The department, service, ward and bed selects, preselected with $values.
  *
  * @param array<string, mixed> $values
  */
-$locationFields = static function (array $values, bool $withTeam) use ($departamentos, $servicios, $cuartos): void {
+$locationFields = static function (array $values) use ($departamentos, $servicios, $cuartos): void {
     $sel = static fn(string $col, string $val): string => ((string) ($values[$col] ?? '')) === $val ? 'selected' : '';
     ?>
     <div class="form-group row mb-3">
@@ -206,16 +205,6 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
             </select>
         </div>
     </div>
-    <?php if ($withTeam) : ?>
-    <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label"><?php echo xlt('Primary team'); ?></label>
-        <div class="col-sm-6">
-            <input type="text" name="equipo" class="form-control" maxlength="100"
-                   placeholder="<?php echo xla('e.g. Intensive Care'); ?>"
-                   value="<?php echo attr((string) ($values['equipo'] ?? '')); ?>">
-        </div>
-    </div>
-    <?php endif; ?>
     <?php
 };
 ?>
@@ -301,8 +290,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     </div>
 
                     <?php if (!$viewmode) {
-                        // In the ICU the primary team is almost always the unit's own team.
-                        $locationFields(['equipo' => xl('Intensive Care')], true);
+                        $locationFields([]);
                     } ?>
                 </fieldset>
 
@@ -331,7 +319,6 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                         <dt><?php echo xlt('Department'); ?></dt><dd><?php echo text($label($departamentos, $current['departamento'])); ?></dd>
                         <dt><?php echo xlt('Service'); ?></dt><dd><?php echo text($label($servicios, $current['servicio'])); ?></dd>
                         <dt><?php echo xlt('Ward / Bed'); ?></dt><dd><?php echo text($label($cuartos, $current['cuarto']) . ' / ' . (string) ($current['cama'] ?? '')); ?></dd>
-                        <dt><?php echo xlt('Primary team'); ?></dt><dd><?php echo text((string) ($current['equipo'] ?? '') !== '' ? (string) $current['equipo'] : xl('Not recorded yet')); ?></dd>
                         <dt><?php echo xlt('Since'); ?></dt><dd><?php echo text($fmt($current['start_date'])); ?></dd>
                     </dl>
                 </div>
@@ -352,7 +339,7 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     <input type="hidden" name="mode" id="mov-mode" value="transfer">
                     <h5 id="mov-title" class="mb-2"></h5>
                     <p id="mov-help" class="text-muted small mb-3"></p>
-                    <?php $locationFields($current ?? [], true); ?>
+                    <?php $locationFields($current ?? []); ?>
                     <div class="form-group row mb-3 mov-when">
                         <label class="col-sm-3 col-form-label" id="mov-when-label"><?php echo xlt('Date and time'); ?></label>
                         <div class="col-sm-4">
@@ -378,7 +365,6 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     <span>
                         <strong><?php echo text(xl('Ward') . ' ' . $label($cuartos, $res['cuarto']) . ' / ' . xl('Bed') . ' ' . (string) ($res['cama'] ?? '')); ?></strong>
                         — <?php echo text($label($departamentos, $res['departamento']) . ', ' . $label($servicios, $res['servicio'])); ?>
-                        <?php if ((string) ($res['equipo'] ?? '') !== '') : ?>— <?php echo text((string) $res['equipo']); ?><?php endif; ?>
                         <small class="d-block text-muted"><?php echo text(xl('Expected arrival') . ': ' . $fmt($res['start_date']) . ' · ' . xl('Reserved by') . ' ' . (string) ($res['user'] ?? '')); ?></small>
                     </span>
                     <form method="post" action="<?php echo attr($saveUrl); ?>" class="ml-auto d-flex flex-wrap" style="gap:6px;">
@@ -408,26 +394,10 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                     AdmissionTeams::CANCELLED => [xl('Cancelled'), 'secondary'],
                 ];
                 ?>
-                <?php $primaryTeam = $current !== null ? trim((string) ($current['equipo'] ?? '')) : ''; ?>
                 <div class="team-block team-primary mb-3">
                     <div class="team-title"><?php echo xlt('Primary team'); ?></div>
-                    <div class="d-flex flex-wrap align-items-center" style="gap:8px;">
-                        <?php if ($primaryTeam !== '') : ?>
-                        <strong><?php echo text($primaryTeam); ?></strong>
-                        <span class="text-muted small"><?php echo text(xl('since') . ' ' . $fmt($current['start_date'] ?? '')); ?></span>
-                            <?php if (!$discharged) : ?>
-                        <button type="button" class="btn btn-outline-primary btn-sm ml-auto btn-mov" data-mode="transfer" data-key="team"><i class="fa fa-user-md mr-1"></i><?php echo xlt('Change primary team'); ?></button>
-                            <?php endif; ?>
-                        <?php else : ?>
-                        <em class="text-warning"><?php echo xlt('Not recorded yet'); ?></em>
-                            <?php if (!$discharged && $current !== null) : ?>
-                        <button type="button" class="btn btn-primary btn-sm ml-auto btn-mov" data-mode="team_set" data-key="teamset"><i class="fa fa-user-md mr-1"></i><?php echo xlt('Record primary team'); ?></button>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-                    <small class="text-muted"><?php echo $primaryTeam !== ''
-                        ? xlt('The team in charge of the patient in the ICU; it decides admission and discharge.')
-                        : xlt('No primary team has been recorded yet. Use "Record primary team" to record it.'); ?></small>
+                    <strong><?php echo xlt('Intensive Care'); ?></strong> <span class="text-muted"><?php echo xlt('(ICU team)'); ?></span>
+                    <small class="text-muted d-block"><?php echo xlt('The team in charge of the patient in the ICU; it decides admission and discharge.'); ?></small>
                 </div>
 
                 <div class="team-block team-shared mb-3">
@@ -544,7 +514,6 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                                 <th><?php echo xlt('Department'); ?></th>
                                 <th><?php echo xlt('Service'); ?></th>
                                 <th><?php echo xlt('Ward / Bed'); ?></th>
-                                <th><?php echo xlt('Primary team'); ?></th>
                                 <th><?php echo xlt('Status'); ?></th>
                                 <th><?php echo xlt('Recorded by'); ?></th>
                             </tr>
@@ -558,7 +527,6 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
                                 <td><?php echo text($label($departamentos, $m['departamento'])); ?></td>
                                 <td><?php echo text($label($servicios, $m['servicio'])); ?></td>
                                 <td><?php echo text($label($cuartos, $m['cuarto']) . ' / ' . (string) ($m['cama'] ?? '')); ?></td>
-                                <td><?php echo text((string) ($m['equipo'] ?? '')); ?></td>
                                 <td><?php echo text($statusLabels[$st] ?? $st); ?></td>
                                 <td>
                                     <?php echo text((string) ($m['user'] ?? '') !== '' ? (string) $m['user'] : '—'); ?>
@@ -600,23 +568,16 @@ $locationFields = static function (array $values, bool $withTeam) use ($departam
         'transfer' => [xl('Transfer patient'), xl('The current location ends and the new one starts at the date and time below. Both stay in the history.'), xl('Date and time of the transfer')],
         'reserve'  => [xl('Reserve bed'), xl('The bed is assigned but the patient has not arrived yet. The current location does not change until the arrival is recorded.'), xl('Expected arrival')],
         'correct'  => [xl('Correct current location'), xl('Only to fix a data entry error. It does not record a transfer; the history keeps who corrected it and when.'), ''],
-        'teamset'  => [xl('Record primary team'), xl('Write the team in charge of the patient. It does not record a transfer: it only fills in the missing data; the history keeps who recorded it and when.'), ''],
-        'team'     => [xl('Change primary team'), xl('Write the new primary team; the bed can stay the same. The change is recorded as a movement and both teams stay in the history.'), xl('Date and time of the change')],
     ]); ?>;
     $('.btn-mov').on('click', function () {
         var mode = $(this).data('mode');
-        var key = $(this).data('key') || mode;
+        var key = mode;
         $('#mov-mode').val(mode);
         $('#mov-title').text(movTexts[key][0]);
         $('#mov-help').text(movTexts[key][1]);
         $('#mov-when-label').text(movTexts[key][2]);
-        $('.mov-when').toggle(mode !== 'correct' && mode !== 'team_set');
-        $('.mov-note').toggle(mode !== 'correct' && mode !== 'team_set');
-        // Recording the primary team does not touch the location.
-        $('#form-mov select').closest('.form-group').toggle(mode !== 'team_set');
-        if (key === 'teamset' || key === 'team') {
-            $('#form-mov input[name=equipo]').val(key === 'teamset' ? <?php echo js_escape(xl('Intensive Care')); ?> : '').trigger('focus');
-        }
+        $('.mov-when').toggle(mode !== 'correct');
+        $('.mov-note').toggle(mode !== 'correct');
         $('#form-mov').show()[0].scrollIntoView({behavior: 'smooth', block: 'nearest'});
     });
     $('#mov-close').on('click', function () {

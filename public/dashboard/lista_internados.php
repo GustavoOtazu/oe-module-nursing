@@ -82,7 +82,6 @@ AdmissionMovements::sync($inpatient_catid);
 /** @var list<array<string, string|int|null>> $inpatient */
 $inpatient = QueryUtils::fetchRecords(
     "SELECT f.*, CONCAT(p.fname, ' ', p.lname) AS paciente, p.pubpid AS pubpid,
-            m.equipo AS equipo_actual,
             (SELECT CONCAT(UPPER(r.cuarto), ' / ', r.cama) FROM " . AdmissionMovements::TABLE . " r
               WHERE r.encounter = f.encounter AND r.status = ? ORDER BY r.start_date, r.id LIMIT 1) AS cama_reservada,
             (SELECT GROUP_CONCAT(CONCAT(t.team, IF(t.professional IS NULL, '', CONCAT(' (', t.professional, ')'))) ORDER BY t.start_date SEPARATOR ', ') FROM " . AdmissionTeams::TABLE . " t
@@ -338,9 +337,6 @@ $nursing_forms = [
                                 <td><?php echo text((string)($result['nro_registro'] ?? '')); ?></td>
                                 <td>
                                     <?php echo text(strtoupper((string)($result['servicio'] ?? ''))); ?>
-                                    <?php if ((string)($result['equipo_actual'] ?? '') !== '') : ?>
-                                    <small class="d-block text-muted"><?php echo text((string)$result['equipo_actual']); ?></small>
-                                    <?php endif; ?>
                                     <?php if ((string)($result['equipos_compartidos'] ?? '') !== '') : ?>
                                     <small class="d-block text-muted" title="<?php echo xla('Shared care'); ?>"><i class="fa fa-user-friends"></i> <?php echo text((string)$result['equipos_compartidos']); ?></small>
                                     <?php endif; ?>

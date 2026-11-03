@@ -89,14 +89,6 @@ if ($mode === 'new') {
 
     (new FormService())->addForm($encounter, "New Patient Encounter", (int)$fe_id, "newpatient", $pid, $provider_id);
     AdmissionMovements::sync($inpatient_catid, (int) $fe_id);
-    // The first location of the admission gets the primary team written in the form.
-    $equipo = trim((string) filter_input(INPUT_POST, 'equipo'));
-    if ($equipo !== '') {
-        QueryUtils::sqlStatementThrowException(
-            "UPDATE " . AdmissionMovements::TABLE . " SET equipo = ? WHERE encounter = ? AND status = ?",
-            [mb_substr($equipo, 0, 100), $encounter, AdmissionMovements::CURRENT]
-        );
-    }
 
     header("Location: lista_internados.php?update=1");
     exit;
@@ -116,7 +108,7 @@ if ($mode === 'edit') {
     exit;
 }
 
-$movementModes = ['transfer', 'reserve', 'confirm', 'cancel', 'correct', 'team_set'];
+$movementModes = ['transfer', 'reserve', 'confirm', 'cancel', 'correct'];
 if (in_array($mode, $movementModes, true)) {
     /** @var array<string, string|int|null>|false $feRow */
     $feRow = $encounter_id > 0
@@ -133,7 +125,8 @@ if (in_array($mode, $movementModes, true)) {
         'servicio'     => $servicio,
         'cuarto'       => $cuarto,
         'cama'         => $cama,
-        'equipo'       => (string) filter_input(INPUT_POST, 'equipo'),
+        // The primary team is always the ICU team; the stored value is kept as it is.
+        'equipo'       => null,
     ];
     $note = (string) filter_input(INPUT_POST, 'note');
 
@@ -151,6 +144,7 @@ if (in_array($mode, $movementModes, true)) {
     $movementId = (int) filter_input(INPUT_POST, 'movement_id', FILTER_SANITIZE_NUMBER_INT);
 
     AdmissionMovements::sync($inpatient_catid, $encounter_id);
+    $location['equipo'] = AdmissionMovements::current($feEncounter)['equipo'] ?? null;
     try {
         match ($mode) {
             'transfer' => AdmissionMovements::transfer($fePid, $feEncounter, $location, $when, $user, $note),
@@ -158,7 +152,6 @@ if (in_array($mode, $movementModes, true)) {
             'confirm'  => AdmissionMovements::confirm($movementId, $feEncounter, $when, $user),
             'cancel'   => AdmissionMovements::cancel($movementId, $feEncounter, $user),
             'correct'  => AdmissionMovements::correct($feEncounter, $location, $user),
-            'team_set' => AdmissionMovements::setTeam($feEncounter, (string) $location['equipo'], $user),
         };
         $result = $mode;
     } catch (\DomainException) {

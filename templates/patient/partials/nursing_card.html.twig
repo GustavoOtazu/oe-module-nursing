@@ -41,12 +41,6 @@ Nursing admission card for the patient dashboard.
                     <td>{{ admission.cuarto|upper|text }}{% if admission.cuarto and admission.cama %} / {% endif %}{{ admission.cama|text }}</td>
                 </tr>
                 {% endif %}
-                {% if admission.equipo %}
-                <tr>
-                    <td class="font-weight-bold">{{ "Primary team"|xlt }}</td>
-                    <td>{{ admission.equipo|text }}</td>
-                </tr>
-                {% endif %}
                 {% if admission.location_since %}
                 <tr>
                     <td class="font-weight-bold">{{ "In this bed since"|xlt }}</td>

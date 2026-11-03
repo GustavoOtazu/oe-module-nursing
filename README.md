@@ -9,17 +9,17 @@ It was developed as an undergraduate thesis project at the Facultad Politécnica
 **Inpatient list** (top menu *Nursing*)
 - Current admissions with record number, ward, bed and admission date; discharge and death registration.
 - A form selector per patient, with direct access to OpenEMR's vitals form for that admission.
-- A card in the patient summary showing whether the patient is admitted, where, with which primary team and since when.
+- A card in the patient summary showing whether the patient is admitted, where and since when.
 
 **Location history** (button *Location and transfers*)
-- Ward, bed, service and primary team are not overwritten: each transfer closes the current location and opens a new one, and the admission keeps the full history.
+- Ward, bed and service are not overwritten: each transfer closes the current location and opens a new one, and the admission keeps the full history.
 - A bed can be reserved before the patient arrives (e.g. still in the ED); the current location changes only when the arrival is recorded.
 - Data entry errors are corrected without recording a transfer, keeping who corrected them and when.
 - Location changes made outside the module (e.g. by the hospital information system) are detected and recorded.
 - `form_encounter` keeps only the current location; the history is in the module's own table `nursing_admission_movement`.
 
 **Teams of the ICU stay** (same screen, section *Teams*)
-- The **primary team** is the ICU team, which decides admission and discharge. It stays in the location history and is changed with a movement.
+- The **primary team** is always the ICU team, which decides admission and discharge (the module is for the ICU). The unit within the ICU comes in the department.
 - **Shared care**: other teams that also follow the patient (e.g. General Surgery after an operation). They do not block the ICU discharge, which is the ICU team's decision, but the discharge warns that they are still following the patient. Their participation in the stay ends with the discharge or before, when the team stops following the patient.
 - **Consultations**: a specialty is asked for an opinion; it does not take over the care and does not affect the discharge. The request, the answer and the recommendation stay recorded.
 - Each shared care team and each answered consultation can record the professional (optional): the physician of the team that follows the patient, or the one who answered.
