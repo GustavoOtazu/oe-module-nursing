@@ -34,7 +34,7 @@ if (!CsrfUtils::verifyCsrfToken($csrf_token, session: $session)) {
     CsrfUtils::csrfNotVerified();
 }
 
-if (!AclMain::aclCheckCore('encounters', 'notes')) {
+if (!AclMain::aclCheckCore('encounters', 'notes', '', 'write')) {
     die(xlt('Access denied'));
 }
 

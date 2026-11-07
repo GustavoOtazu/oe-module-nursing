@@ -16,6 +16,7 @@ require_once(dirname(__DIR__, 6) . "/globals.php");
 require_once("$srcdir/api.inc.php");
 require_once("$srcdir/forms.inc.php");
 
+use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Csrf\CsrfUtils;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
@@ -31,6 +32,10 @@ if (filter_input(INPUT_SERVER, 'REQUEST_METHOD') !== 'POST') {
 $csrf_token = (string) filter_input(INPUT_POST, 'csrf_token_form');
 if (!CsrfUtils::verifyCsrfToken($csrf_token, session: $session)) {
     CsrfUtils::csrfNotVerified();
+}
+
+if (!AclMain::aclCheckCore('encounters', 'notes', '', 'write')) {
+    die(xlt('Access denied'));
 }
 
 $pid       = (int) filter_input(INPUT_POST, 'pid', FILTER_SANITIZE_NUMBER_INT);
