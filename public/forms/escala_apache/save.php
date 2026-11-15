@@ -50,6 +50,9 @@ if (!$pid || !$encounter) {
     die(xlt("Error: Missing required data (PID or Encounter)"));
 }
 
+// Audit the right patient: the session may still have another patient open.
+\OpenEMR\Modules\Nursing\PatientContext::useRecord((int) $pid, (int) $encounter);
+
 $user       = is_string($v = $session->get('authUser')) ? $v : die(xlt('Access denied'));
 $groupname  = is_string($v = $session->get('authProvider')) ? $v : die(xlt('Access denied'));
 $authorized = is_numeric($v = $session->get('userauthorized')) ? (int) $v : 0;

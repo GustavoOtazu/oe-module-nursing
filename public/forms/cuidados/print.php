@@ -28,6 +28,9 @@ if (!$pid || !$encounter || !$id) {
     die(xlt("Error: Missing required parameters."));
 }
 
+// Audit the right patient: the session may still have another patient open.
+\OpenEMR\Modules\Nursing\PatientContext::useRecord((int) $pid, (int) $encounter);
+
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
     die(xlt('Access denied'));
 }

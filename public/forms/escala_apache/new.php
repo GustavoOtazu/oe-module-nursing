@@ -40,6 +40,9 @@ if (!$pid || !$encounter) {
     die(xlt("Error: Missing required parameters (PID or Encounter)"));
 }
 
+// Audit the right patient: the session may still have another patient open.
+\OpenEMR\Modules\Nursing\PatientContext::useRecord((int) $pid, (int) $encounter);
+
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
     die(xlt('Access denied'));
 }
@@ -189,6 +192,7 @@ $numInput = static function (string $name, string $label, string $unit, string $
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo text($page_title); ?></title>
     <?php Header::setupHeader(); ?>
+    <?php echo \OpenEMR\Modules\Nursing\PatientContext::uiScript((int) $pid, (int) $encounter); ?>
     <script>
         function cancelClicked() {
 <?php if ($from === 'list') : ?>

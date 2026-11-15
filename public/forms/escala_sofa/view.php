@@ -39,6 +39,9 @@ if (!$pid || !$encounter) {
     exit;
 }
 
+// Audit the right patient: the session may still have another patient open.
+\OpenEMR\Modules\Nursing\PatientContext::useRecord((int) $pid, (int) $encounter);
+
 if (!AclMain::aclCheckCore('encounters', 'notes')) {
     die(xlt('Access denied'));
 }
@@ -125,6 +128,7 @@ $sofaSystems = static function (array $row) use ($fmt): array {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo xlt('SOFA Score'); ?></title>
     <?php Header::setupHeader(); ?>
+    <?php echo \OpenEMR\Modules\Nursing\PatientContext::uiScript((int) $pid, (int) $encounter); ?>
     <script>
         function backClicked() {
 <?php if ($from === 'list') : ?>
