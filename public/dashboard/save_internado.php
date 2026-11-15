@@ -63,6 +63,13 @@ if ($mode === 'new') {
         die(xlt('Invalid patient or category'));
     }
 
+    // One open admission per patient: a second one is not recorded, the current one is shown.
+    $openId = AdmissionMovements::openAdmissionId($pid, $inpatient_catid);
+    if ($openId > 0) {
+        header("Location: editar_internado.php?id=" . urlencode((string) $openId) . "&done=already_admitted");
+        exit;
+    }
+
     // Get facility and provider from session/user
     /** @var array<string, string|int|null>|false $userRow */
     $userRow = QueryUtils::querySingleRow("SELECT facility_id FROM users WHERE username = ?", [is_string($v = $session->get('authUser')) ? $v : '']);

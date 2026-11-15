@@ -82,6 +82,15 @@ if ($viewmode) {
     if ($pid_new <= 0) {
         die(xlt('Missing patient ID'));
     }
+    // A patient already admitted gets the current admission instead of a new one.
+    $catRow = QueryUtils::querySingleRow(
+        "SELECT pc_catid FROM openemr_postcalendar_categories WHERE pc_catname = 'Inpatient' LIMIT 1"
+    );
+    $openId = AdmissionMovements::openAdmissionId($pid_new, is_array($catRow) ? (int) ($catRow['pc_catid'] ?? 0) : 0);
+    if ($openId > 0) {
+        header("Location: editar_internado.php?id=" . urlencode((string) $openId) . "&done=already_admitted");
+        exit;
+    }
     /** @var array<string, string|int|null>|false $patient */
     $patient  = QueryUtils::querySingleRow("SELECT * FROM patient_data WHERE pid = ?", [$pid_new]);
     $pid_form = $pid_new;
@@ -111,6 +120,7 @@ $sourceLabels = [
     AdmissionMovements::SOURCE_SIH       => xl('SIH web service'),
 ];
 $doneMessages = [
+    'already_admitted' => ['warning', xl('The patient is already admitted. A second admission was not recorded; this is the current admission.')],
     'transfer' => ['success', xl('Transfer recorded.')],
     'reserve'  => ['success', xl('Bed reserved.')],
     'confirm'  => ['success', xl('Arrival at the reserved bed recorded.')],

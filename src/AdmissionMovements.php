@@ -92,6 +92,24 @@ final class AdmissionMovements
      *
      * @param int $encounterId form_encounter.id; 0 = every open admission of the category
      */
+    /**
+     * form_encounter.id of the patient's open admission (no end date), or 0. A
+     * patient has at most one: a new admission is not recorded while another is
+     * open, the same rule the SIH web service follows (case CP-06).
+     */
+    public static function openAdmissionId(int $pid, int $inpatientCatId): int
+    {
+        if ($pid <= 0 || $inpatientCatId <= 0) {
+            return 0;
+        }
+        /** @var array<string, string|int|null>|false $row */
+        $row = QueryUtils::querySingleRow(
+            "SELECT id FROM form_encounter WHERE pid = ? AND pc_catid = ? AND date_end IS NULL ORDER BY date DESC, id DESC LIMIT 1",
+            [$pid, $inpatientCatId]
+        );
+        return $row !== false ? (int) ($row['id'] ?? 0) : 0;
+    }
+
     public static function sync(int $inpatientCatId, int $encounterId = 0): void
     {
         if ($inpatientCatId <= 0 && $encounterId <= 0) {

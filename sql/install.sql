@@ -3334,3 +3334,21 @@ UPDATE lang_definitions d
 JOIN lang_constants c ON c.cons_id = d.cons_id
 SET d.definition = 'Hora de los Cuidados'
 WHERE BINARY c.constant_name = BINARY 'Care Time' AND d.lang_id IN (3, 4) AND d.definition = 'Hora de Curación';
+
+-- A patient already admitted is shown the current admission instead of a second one (case CP-06).
+INSERT INTO lang_constants (constant_name)
+SELECT 'The patient is already admitted. A second admission was not recorded; this is the current admission.' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants WHERE BINARY constant_name = BINARY 'The patient is already admitted. A second admission was not recorded; this is the current admission.');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id,
+  CASE ll.lang_id
+    WHEN 3 THEN 'El paciente ya está internado. No se registró una segunda internación; esta es la internación actual.'
+    WHEN 4 THEN 'El paciente ya está internado. No se registró una segunda internación; esta es la internación actual.'
+    WHEN 5 THEN 'Der Patient ist bereits aufgenommen. Eine zweite Aufnahme wurde nicht erfasst; dies ist die aktuelle Aufnahme.'
+    ELSE 'O paciente já está internado. Não foi registrada uma segunda internação; esta é a internação atual.'
+  END
+FROM lang_constants c
+JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
+WHERE BINARY c.constant_name = BINARY 'The patient is already admitted. A second admission was not recorded; this is the current admission.'
+ON DUPLICATE KEY UPDATE definition = VALUES(definition);
