@@ -241,7 +241,7 @@ WHERE lc.constant_name = 'Discharge'
 INSERT IGNORE INTO lang_constants (constant_name) VALUES
   ('Create Mode'),('Edit Mode'),('Observations...'),('Save Changes'),('Save'),
   ('New Wound Care'),('Edit Wound Care'),('Surgical Wound'),('Tracheostomy'),
-  ('Ostomies'),('Pressure Sores'),('Central Venous Line'),('Peripheral IV Line'),('Care Time'),
+  ('Ostomies'),('Pressure Sores'),('Central Venous Line'),('Peripheral IV Line'),('Care Time'),('Wound Care Time'),
   ('New Application'),('Edit Application'),('Saline Solutions'),('Vaccines'),
   ('Plasma Expanders'),('Blood and Blood Products'),('Record Time'),
   ('New Care Bundle'),('Edit Care Bundle'),('Patient Position'),('Oral Rinse'),
@@ -276,7 +276,8 @@ JOIN (SELECT 'Create Mode' cn,'Modo Creación' def UNION ALL
       SELECT 'Pressure Sores','Escaras' UNION ALL
       SELECT 'Central Venous Line','Vía Venosa Central' UNION ALL
       SELECT 'Peripheral IV Line','Vía Venosa Periférica' UNION ALL
-      SELECT 'Care Time','Hora de Curación' UNION ALL
+      SELECT 'Care Time','Hora de los Cuidados' UNION ALL
+      SELECT 'Wound Care Time','Hora de Curación' UNION ALL
       SELECT 'New Application','Nueva Aplicación' UNION ALL
       SELECT 'Edit Application','Editar Aplicación' UNION ALL
       SELECT 'Saline Solutions','Sueros' UNION ALL
@@ -409,7 +410,8 @@ JOIN (SELECT 'Nursing' cn,'Enfermería' es,'Pflege' de,'Enfermagem' pt_eu,'Enfer
       SELECT 'Pressure Sores','Escaras','Druckgeschwüre','Úlceras de Pressão','Úlceras de Pressão' UNION ALL
       SELECT 'Central Venous Line','Vía Venosa Central','Zentraler Venenkatheter','Cateter Venoso Central','Cateter Venoso Central' UNION ALL
       SELECT 'Peripheral IV Line','Vía Venosa Periférica','Peripherer Venenkatheter','Acesso Venoso Periférico','Acesso Venoso Periférico' UNION ALL
-      SELECT 'Care Time','Hora de Curación','Pflegezeit','Hora dos Cuidados','Hora dos Cuidados' UNION ALL
+      SELECT 'Care Time','Hora de los Cuidados','Pflegezeit','Hora dos Cuidados','Hora dos Cuidados' UNION ALL
+      SELECT 'Wound Care Time','Hora de Curación','Zeit der Wundversorgung','Hora do Curativo','Hora do Curativo' UNION ALL
       -- Aplicaciones
       SELECT 'New Application','Nueva Aplicación','Neue Anwendung','Nova Aplicação','Nova Aplicação' UNION ALL
       SELECT 'Edit Application','Editar Aplicación','Anwendung bearbeiten','Editar Aplicação','Editar Aplicação' UNION ALL
@@ -3309,3 +3311,26 @@ SET d.definition = 'Equipo principal'
 WHERE BINARY c.constant_name = BINARY 'Primary team' AND d.lang_id IN (3, 4) AND d.definition = 'Equipo tratante';
 
 DROP TEMPORARY TABLE IF EXISTS nursing_fix_lang10;
+
+-- «Care Time» was shared by wound care and the care bundle, so the bundle record showed
+-- «Hora de Curación». Wound care now uses «Wound Care Time»; this also updates existing installs.
+INSERT INTO lang_constants (constant_name)
+SELECT 'Wound Care Time' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants WHERE BINARY constant_name = BINARY 'Wound Care Time');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id,
+  CASE ll.lang_id
+    WHEN 3 THEN 'Hora de Curación' WHEN 4 THEN 'Hora de Curación'
+    WHEN 5 THEN 'Zeit der Wundversorgung'
+    ELSE 'Hora do Curativo'
+  END
+FROM lang_constants c
+JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
+WHERE BINARY c.constant_name = BINARY 'Wound Care Time'
+ON DUPLICATE KEY UPDATE definition = VALUES(definition);
+
+UPDATE lang_definitions d
+JOIN lang_constants c ON c.cons_id = d.cons_id
+SET d.definition = 'Hora de los Cuidados'
+WHERE BINARY c.constant_name = BINARY 'Care Time' AND d.lang_id IN (3, 4) AND d.definition = 'Hora de Curación';

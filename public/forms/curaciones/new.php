@@ -183,7 +183,7 @@ $save_url  = OEGlobalsBag::getInstance()->getString('webroot')
         <?php endforeach; ?>
 
         <div class="form-group">
-            <label for="hora_operacion" class="font-weight-bold"><?php echo xlt('Care Time'); ?>:</label>
+            <label for="hora_operacion" class="font-weight-bold"><?php echo xlt('Wound Care Time'); ?>:</label>
             <input type="time" name="hora_operacion" id="hora_operacion"
                    class="form-control w-auto" value="<?php echo attr((string)$hora_operacion); ?>">
         </div>

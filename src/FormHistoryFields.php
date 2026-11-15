@@ -41,7 +41,7 @@ final class FormHistoryFields
                 $bool('escaras', 'Pressure Sores'),
                 $bool('via_venosa_central', 'Central Venous Line'),
                 $bool('via_venosa', 'Peripheral IV Line'),
-                ['col' => 'hora_operacion', 'label' => 'Care Time', 'type' => 'time'],
+                ['col' => 'hora_operacion', 'label' => 'Wound Care Time', 'type' => 'time'],
             ],
             'aplicaciones' => [
                 $bool('medicamentos', 'Medications'),

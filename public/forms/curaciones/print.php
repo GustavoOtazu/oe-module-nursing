@@ -119,7 +119,7 @@ ob_start();
             &nbsp;|&nbsp;
             <?php echo xlt('Date'); ?>: <strong><?php echo text($eval_date); ?></strong>
             &nbsp;|&nbsp;
-            <?php echo xlt('Care Time'); ?>: <strong><?php echo text($eval_time); ?></strong>
+            <?php echo xlt('Wound Care Time'); ?>: <strong><?php echo text($eval_time); ?></strong>
         </div>
     </div>
 

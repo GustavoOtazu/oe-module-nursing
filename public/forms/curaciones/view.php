@@ -207,7 +207,7 @@ if ($id > 0) {
 
         <div class="registro-info">
             <div class="info-box-small">
-                <strong><?php echo xlt('Care Time'); ?>:</strong>
+                <strong><?php echo xlt('Wound Care Time'); ?>:</strong>
                 <span><?php echo text((string)($row['hora_operacion'] ?? 'N/A')); ?></span>
             </div>
             <div class="info-box-small">

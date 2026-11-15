@@ -234,7 +234,7 @@ function curaciones_report(int $pid, int $encounter, int $cols, int $id): void
 
         <!-- META BAR -->
         <div class="meta-bar">
-            <span><strong><?php echo xlt('Care Time'); ?>:</strong> <?php echo text($hora); ?></span>
+            <span><strong><?php echo xlt('Wound Care Time'); ?>:</strong> <?php echo text($hora); ?></span>
             <span><strong><?php echo xlt('Recorded'); ?>:</strong> <?php echo text($fecha); ?></span>
             <?php if (isset($row['user']) && $row['user'] !== '') :
                 ?>
