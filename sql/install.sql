@@ -3359,3 +3359,21 @@ UPDATE form_encounter fe
 JOIN openemr_postcalendar_categories c ON c.pc_catid = fe.pc_catid AND c.pc_catname = 'Inpatient'
 SET fe.out_date = DATE(fe.date_end)
 WHERE fe.date_end IS NOT NULL AND fe.out_date IS NULL;
+
+-- The fluid balance rejects a volume that is not a number or is negative (case CP-13).
+INSERT INTO lang_constants (constant_name)
+SELECT 'Error: Invalid volume (it must be a number of mL, zero or greater)' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants WHERE BINARY constant_name = BINARY 'Error: Invalid volume (it must be a number of mL, zero or greater)');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id,
+  CASE ll.lang_id
+    WHEN 3 THEN 'Error: volumen inválido (debe ser un número de mL, cero o mayor)'
+    WHEN 4 THEN 'Error: volumen inválido (debe ser un número de mL, cero o mayor)'
+    WHEN 5 THEN 'Fehler: ungültiges Volumen (es muss eine Zahl in mL sein, null oder größer)'
+    ELSE 'Erro: volume inválido (deve ser um número de mL, zero ou maior)'
+  END
+FROM lang_constants c
+JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
+WHERE BINARY c.constant_name = BINARY 'Error: Invalid volume (it must be a number of mL, zero or greater)'
+ON DUPLICATE KEY UPDATE definition = VALUES(definition);

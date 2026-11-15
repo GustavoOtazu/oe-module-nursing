@@ -63,15 +63,27 @@ $hora_registro = preg_match('/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/', $hora_raw)
 
 $observaciones = (string) filter_input(INPUT_POST, 'observaciones');
 
-// Volumes in mL: empty/non-numeric -> NULL. Negative values and values that do
-// not fit decimal(8,2) are also stored as NULL so the saved fields always match
-// the totals FluidBalance computes from them.
+// Volumes in mL. An empty field is a missing value (NULL) and zero is valid. A value
+// that is not a number, is negative or does not fit decimal(8,2) is rejected and
+// nothing is saved, as the scales do with an out-of-range value: the browser
+// already blocks it, but a request that does not come from the form must not be
+// saved with that field silently empty (case CP-13).
 $fields = array_merge(FluidBalance::INTAKE_FIELDS, FluidBalance::OUTPUT_FIELDS);
 /** @var array<string, float|null> $volumes */
 $volumes = [];
+/** @var list<string> $invalid */
+$invalid = [];
 foreach ($fields as $field) {
-    $parsed = Num::parse(filter_input(INPUT_POST, $field));
-    $volumes[$field] = ($parsed !== null && $parsed >= 0 && $parsed < 1000000) ? round($parsed, 2) : null;
+    $raw    = trim((string) filter_input(INPUT_POST, $field));
+    $parsed = Num::parse($raw);
+    if ($raw !== '' && ($parsed === null || $parsed < 0 || $parsed >= 1000000)) {
+        $invalid[] = $field;
+        continue;
+    }
+    $volumes[$field] = $parsed !== null ? round($parsed, 2) : null;
+}
+if ($invalid !== []) {
+    die(xlt('Error: Invalid volume (it must be a number of mL, zero or greater)') . ': ' . text(implode(', ', $invalid)));
 }
 
 // Totals are always computed server-side; client-side values are display only.
