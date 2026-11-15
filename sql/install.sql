@@ -3352,3 +3352,10 @@ FROM lang_constants c
 JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
 WHERE BINARY c.constant_name = BINARY 'The patient is already admitted. A second admission was not recorded; this is the current admission.'
 ON DUPLICATE KEY UPDATE definition = VALUES(definition);
+
+-- The manual discharge filled only date_end; the SIH web service fills date_end and out_date.
+-- Both now fill the two columns; admissions discharged by hand before get out_date from date_end.
+UPDATE form_encounter fe
+JOIN openemr_postcalendar_categories c ON c.pc_catid = fe.pc_catid AND c.pc_catname = 'Inpatient'
+SET fe.out_date = DATE(fe.date_end)
+WHERE fe.date_end IS NOT NULL AND fe.out_date IS NULL;

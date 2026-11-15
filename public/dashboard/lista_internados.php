@@ -52,14 +52,14 @@ if (filter_input(INPUT_SERVER, 'REQUEST_METHOD') === 'POST') {
         $ts_death = strtotime((string)$death_date);
         $death_date_safe = $ts_death !== false ? date('Y-m-d', $ts_death) : date('Y-m-d');
         QueryUtils::sqlStatementThrowException(
-            "UPDATE form_encounter SET date_end = ?, death_date = ? WHERE id = ?",
-            [$death_date_safe, $death_date_safe, $id_encounter]
+            "UPDATE form_encounter SET date_end = ?, death_date = ?, out_date = ? WHERE id = ?",
+            [$death_date_safe, $death_date_safe, $death_date_safe, $id_encounter]
         );
         AdmissionMovements::close($id_encounter, $death_date_safe);
         $action_performed = true;
     } elseif ($id_encounter) {
         QueryUtils::sqlStatementThrowException(
-            "UPDATE form_encounter SET date_end = DATE(NOW()) WHERE id = ?",
+            "UPDATE form_encounter SET date_end = DATE(NOW()), out_date = DATE(NOW()) WHERE id = ?",
             [$id_encounter]
         );
         AdmissionMovements::close($id_encounter, date('Y-m-d'));
