@@ -12,11 +12,7 @@
  */
 
 require_once(dirname(__DIR__, 6) . "/globals.php");
-/** @var string $srcdir */
-// ESign is not autoloaded; core does the same require in forms.php
-require_once("$srcdir/ESign/Api.php");
 
-use ESign\Api as ESignApi;
 use OpenEMR\Common\Acl\AclMain;
 use OpenEMR\Common\Database\QueryUtils;
 use OpenEMR\Common\Session\SessionWrapperFactory;
@@ -50,15 +46,8 @@ if (!AclMain::aclCheckCore('encounters', 'notes')) {
 // have said "Edit"; the read-only detail below is what core calls "View", shown
 // for locked forms and for users without write access.
 if ($id > 0 && AclMain::aclCheckCore('encounters', 'notes', '', 'write')) {
-    $formdir = basename(__DIR__);
-    // core's ESign api keys off forms.id, while $id here is forms.form_id
-    /** @var array<string, string|int|null>|false $formRow */
-    $formRow = QueryUtils::querySingleRow(
-        "SELECT id FROM forms WHERE form_id = ? AND formdir = ? AND encounter = ? AND deleted = 0 LIMIT 1",
-        [$id, $formdir, $encounter]
-    );
-    $isLocked = $formRow !== false
-        && (new ESignApi())->createFormESign((int) $formRow['id'], $formdir, $encounter)->isLocked();
+    // Signed or deleted records stay read-only (same rule as new.php and save.php).
+    $isLocked = \OpenEMR\Modules\Nursing\FormLock::isLocked(basename(__DIR__), (int) $id, (int) $encounter);
     if (!$isLocked) {
         require __DIR__ . '/new.php';
         return;

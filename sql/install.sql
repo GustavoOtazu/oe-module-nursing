@@ -3377,3 +3377,21 @@ FROM lang_constants c
 JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
 WHERE BINARY c.constant_name = BINARY 'Error: Invalid volume (it must be a number of mL, zero or greater)'
 ON DUPLICATE KEY UPDATE definition = VALUES(definition);
+
+-- A record deleted from the encounter can no longer be edited, signed or not.
+INSERT INTO lang_constants (constant_name)
+SELECT 'This record is signed or was deleted and can no longer be edited.' FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM lang_constants WHERE BINARY constant_name = BINARY 'This record is signed or was deleted and can no longer be edited.');
+
+INSERT INTO lang_definitions (cons_id, lang_id, definition)
+SELECT c.cons_id, ll.lang_id,
+  CASE ll.lang_id
+    WHEN 3 THEN 'Este registro está firmado o fue eliminado y ya no se puede modificar.'
+    WHEN 4 THEN 'Este registro está firmado o fue eliminado y ya no se puede modificar.'
+    WHEN 5 THEN 'Dieser Eintrag ist signiert oder wurde gelöscht und kann nicht mehr geändert werden.'
+    ELSE 'Este registro está assinado ou foi excluído e não pode mais ser modificado.'
+  END
+FROM lang_constants c
+JOIN lang_languages ll ON ll.lang_id IN (3, 4, 5, 19, 20, 21)
+WHERE BINARY c.constant_name = BINARY 'This record is signed or was deleted and can no longer be edited.'
+ON DUPLICATE KEY UPDATE definition = VALUES(definition);

@@ -9,6 +9,10 @@
  * the read-only view instead), save.php (rejects the update on the server) and
  * view.php (hides "Edit").
  *
+ * A record deleted from the encounter is locked too, signed or not: core's
+ * "Delete" only flags forms.deleted, so the row and its signature stay in the
+ * database and must not be changed afterwards.
+ *
  * @package   OpenEMR
  * @link      https://www.open-emr.org
  * @author    Gustavo Otazu
@@ -50,10 +54,13 @@ final class FormLock
         $locked = false;
         /** @var array<string, string|int|null>|false $row */
         $row = QueryUtils::querySingleRow(
-            "SELECT id FROM forms WHERE form_id = ? AND formdir = ? AND encounter = ? AND deleted = 0 LIMIT 1",
+            "SELECT id, deleted FROM forms WHERE form_id = ? AND formdir = ? AND encounter = ? ORDER BY deleted LIMIT 1",
             [$formId, $formdir, $encounter]
         );
-        if ($row !== false && $api->createFormESign((int) $row['id'], $formdir, $encounter)->isLocked()) {
+        if ($row !== false && (int) $row['deleted'] !== 0) {
+            // Deleted from the encounter: the record is kept as it was.
+            $locked = true;
+        } elseif ($row !== false && $api->createFormESign((int) $row['id'], $formdir, $encounter)->isLocked()) {
             $locked = true;
         } elseif ($api->lockEncounters() && $api->createEncounterESign($encounter)->isLocked()) {
             // A signed encounter locks all of its forms when "lock encounters" is enabled.

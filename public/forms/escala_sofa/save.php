@@ -119,9 +119,9 @@ $data = [
 
 $is_edit = ($id > 0);
 
-// A signed record can no longer be edited, whatever the client sends.
+// A signed or deleted record can no longer be edited, whatever the client sends.
 if ($is_edit && \OpenEMR\Modules\Nursing\FormLock::isLocked('escala_sofa', $id, $encounter)) {
-    die(xlt('This record is signed and can no longer be edited.'));
+    die(xlt('This record is signed or was deleted and can no longer be edited.'));
 }
 
 if ($is_edit) {
